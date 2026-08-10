@@ -1,0 +1,162 @@
+export type AppMode = 'buyer' | 'artisan';
+
+export type CategoryType = 'Woodwork' | 'Pottery' | 'Brass' | 'Leather' | 'Cane' | 'All';
+
+export interface LocationPin {
+  locality: string;
+  pincode: string;
+  city: string;
+  lat: number;
+  lng: number;
+}
+
+export interface Artisan {
+  id: string;
+  name: string;
+  shopName: string;
+  experienceYears: number;
+  rating: number;
+  reviewsCount: number;
+  isVerified: boolean;
+  avatarUrl: string;
+  coverUrl: string;
+  locality: string;
+  pincode: string;
+  distanceKm: number;
+  lat: number;
+  lng: number;
+  crafts: CategoryType[];
+  specialties: string[];
+  workshopReelUrl?: string;
+  responseTime: string;
+  completedOrdersCount: number;
+  bio: string;
+}
+
+export type Model3DType = 
+  | 'sofa' 
+  | 'dining_table' 
+  | 'study_table' 
+  | 'bed' 
+  | 'wardrobe' 
+  | 'coffee_table' 
+  | 'chair' 
+  | 'bookshelf' 
+  | 'dressing_table' 
+  | 'shoe_rack' 
+  | 'tv_unit' 
+  | 'side_table' 
+  | 'home_temple' 
+  | 'wooden_bench' 
+  | 'crockery_cabinet' 
+  | 'indoor_swing' 
+  | 'chest_of_drawers' 
+  | 'bar_cabinet' 
+  | 'console_table' 
+  | 'bedside_table' 
+  | 'door'
+  | 'carved_mandir' 
+  | 'sheesham_jhula' 
+  | 'brass_urli' 
+  | 'cane_chair';
+
+export interface ItemSubcategory {
+  id: string;
+  name: string;
+  materials: string[];
+}
+
+import type { ItemMaterialSlot } from '../data/materialRates';
+
+export interface Item21Spec {
+  id: string;
+  itemNumber: number;
+  name: string;
+  icon: string;
+  categoryGroup: 'Furniture' | 'Storage & Cabinets' | 'Sacred & Specialty' | 'Architectural & Openings';
+  subcategories: ItemSubcategory[];
+  defaultLengthFt: number;
+  defaultWidthFt: number;
+  defaultHeightFt: number;
+  baseLaborPrice: number;
+  sampleImageUrl: string;
+  model3DType: Model3DType;
+  materials: ItemMaterialSlot[];
+}
+
+export interface Product {
+  id: string;
+  artisanId: string;
+  artisanName: string;
+  shopName: string;
+  title: string;
+  category: CategoryType;
+  price: number;
+  material: string;
+  dimensions: string;
+  rating: number;
+  imageUrl: string;
+  model3DType: Model3DType;
+  finishOptions: string[];
+  description: string;
+  inStock: boolean;
+  leadTimeDays: number;
+  itemSpecId?: string;
+}
+
+export interface CustomRequest {
+  id: string;
+  buyerName: string;
+  category: CategoryType;
+  title: string;
+  dimensions: {
+    length: number;
+    width: number;
+    height: number;
+    unit: 'ft' | 'in';
+  };
+  material: string;
+  budget: number;
+  locality: string;
+  pincode: string;
+  description: string;
+  createdDate: string;
+  activeArtisansCount: number;
+  estimatedQuotes: string;
+  status: 'broadcasted' | 'quotes_received' | 'accepted' | 'in_production';
+}
+
+export interface MilestoneStep {
+  id: number;
+  title: string;
+  status: 'completed' | 'in_progress' | 'pending';
+  timestamp?: string;
+  description: string;
+  photoUrl?: string;
+  iconName: 'check' | 'hammer' | 'brush' | 'truck';
+}
+
+export interface OrderMilestone {
+  orderId: string;
+  projectTitle: string;
+  buyerName: string;
+  artisan: Artisan;
+  totalAmount: number;
+  escrowStatus: 'Locked in Escrow' | 'Partially Released' | 'Full Payout Completed';
+  steps: MilestoneStep[];
+  estimatedDeliveryDate: string;
+}
+
+export interface IncomingRequestRadar {
+  id: string;
+  buyerName: string;
+  title: string;
+  category: CategoryType;
+  material: string;
+  dimensions: string;
+  budget: number;
+  locality: string;
+  distanceKm: number;
+  postedAgo: string;
+  timelineWeeks: number;
+}
