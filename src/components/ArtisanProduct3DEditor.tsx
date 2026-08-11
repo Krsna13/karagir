@@ -38,7 +38,7 @@ export const ArtisanProduct3DEditor: React.FC<ArtisanProduct3DEditorProps> = ({ 
   };
 
   return (
-    <div className="bg-[#120B08] text-white p-6 sm:p-8 rounded-3xl border border-[#2A1E17] max-w-5xl mx-auto shadow-2xl space-y-6">
+    <div className="bg-[#120B08] text-white p-6 sm:p-8 rounded-3xl border border-[#2A1E17] w-full max-w-[1440px] mx-auto shadow-2xl space-y-6">
       
       <div className="border-b border-[#2A1E17] pb-4 flex items-center justify-between">
         <div>
@@ -55,10 +55,36 @@ export const ArtisanProduct3DEditor: React.FC<ArtisanProduct3DEditorProps> = ({ 
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* LEFT COLUMN: 3D THREE.JS VIEWPORT SIMULATION */}
-        <div className="bg-[#1F1510] border border-[#2A1E17] rounded-2xl p-5 flex flex-col justify-between items-center relative min-h-[400px] shadow-inner">
+        {/* LEFT COLUMN: CATEGORIES SIDEBAR */}
+        <div className="lg:col-span-3 bg-[#1F1510] border border-[#2A1E17] rounded-2xl p-5 shadow-inner sticky top-6">
+          <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">
+            Explore {artisan ? artisan.name.split(" ")[0] : "Lakshya"}'s Work
+          </h3>
+          <div className="space-y-4">
+            <div className="relative">
+              <input type="text" placeholder="Search items..." className="w-full bg-[#120B08] border border-[#2A1E17] text-xs text-white pl-8 pr-3 py-2 rounded-xl focus:outline-none focus:border-[#EA580C]" />
+              <svg className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {["Chairs", "Dining Tables", "Sofas", "Cabinets", "Beds", "Consoles"].map((cat, i) => (
+                <div key={cat} className="group cursor-pointer">
+                  <div className="bg-[#1F1510] border border-[#2A1E17] rounded-xl overflow-hidden aspect-square relative mb-1 group-hover:border-[#EA580C] transition-colors">
+                    <img src={`https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80&w=200&h=200&sig=${i}`} alt={cat} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-60 group-hover:opacity-100" />
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors"></div>
+                    <div className="absolute inset-0 flex items-center justify-center text-center p-1">
+                      <span className="text-white font-bold text-[10px] sm:text-xs tracking-wider drop-shadow-md">{cat}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* CENTER COLUMN: 3D THREE.JS VIEWPORT SIMULATION */}
+        <div className="lg:col-span-5 bg-[#1F1510] border border-[#2A1E17] rounded-2xl p-5 flex flex-col justify-between items-center relative min-h-[500px] shadow-inner lg:sticky lg:top-6">
           
           <div className="absolute top-3 left-3 bg-[#EA580C] text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full text-white glow-orange flex items-center space-x-1">
             <Eye className="w-3 h-3" />
@@ -88,7 +114,7 @@ export const ArtisanProduct3DEditor: React.FC<ArtisanProduct3DEditorProps> = ({ 
         </div>
 
         {/* RIGHT COLUMN: LIVE PRICE CONFIGURATOR PANEL */}
-        <div className="bg-[#1F1510] border border-[#2A1E17] rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-xl">
+        <div className="lg:col-span-4 bg-[#1F1510] border border-[#2A1E17] rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-xl">
           <div>
             <span className="text-[10px] uppercase font-bold text-[#EA580C]">Storefront Configurator</span>
             <h3 className="text-xl font-bold text-white mt-0.5 leading-snug">
@@ -304,38 +330,7 @@ export const ArtisanProduct3DEditor: React.FC<ArtisanProduct3DEditorProps> = ({ 
 
       </div>
 
-      {/* ADDITIONAL CATEGORIES SECTION */}
-      <div className="mt-8 pt-8 border-t border-[#2A1E17]">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-white">Other Items by {artisan ? artisan.name.split(" ")[0] : "Lakshya"}</h3>
-          <div className="flex items-center gap-4">
-            <select className="bg-[#120B08] border border-[#2A1E17] text-xs text-slate-300 py-2 px-3 rounded-xl focus:outline-none focus:border-[#EA580C]">
-              <option>All Categories</option>
-              <option>Chairs</option>
-              <option>Tables</option>
-              <option>Beds</option>
-            </select>
-            <div className="relative">
-              <input type="text" placeholder="Search items..." className="bg-[#120B08] border border-[#2A1E17] text-xs text-white pl-8 pr-3 py-2 rounded-xl focus:outline-none focus:border-[#EA580C]" />
-              <svg className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            </div>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {["Chairs", "Dining Tables", "Sofas", "Cabinets"].map((cat, i) => (
-            <div key={cat} className="group cursor-pointer">
-              <div className="bg-[#1F1510] border border-[#2A1E17] rounded-2xl overflow-hidden aspect-square relative mb-2 group-hover:border-[#EA580C] transition-colors">
-                <img src={`https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80&w=400&h=400&sig=${i}`} alt={cat} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-60 group-hover:opacity-100" />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white font-extrabold text-sm tracking-wider drop-shadow-lg">{cat}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+
 
       {/* Fullscreen 3D Viewport Modal */}
       {is3DFullscreenOpen && (
