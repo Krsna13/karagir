@@ -2,16 +2,16 @@ import React, { useState, useRef, useEffect } from "react";
 import type { CraftsmanshipGrade } from "../data/karagirPricingMockData";
 import { LOCALITIES, calculateEstimatedCost, type Locality, type ItemMaterialSlot } from "../data/materialRates";
 import { useMaterial } from "../context/MaterialContext";
-import { 
+import {
   PRIMARY_MATERIALS,
   SECONDARY_ACCENTS,
   SURFACE_FINISHES,
-  CRAFTSMANSHIP_GRADES, 
-  PRODUCT_BASE_CATALOG 
+  CRAFTSMANSHIP_GRADES,
+  PRODUCT_BASE_CATALOG
 } from "../data/karagirPricingMockData";
-import { 
-  Hammer, Sparkles, AlertTriangle, Send, Check, Search, ChevronDown, Plus, Ruler, Calculator, 
-  Camera, Upload, Wand2, Trash2, Eye, FileText, Box 
+import {
+  Hammer, Sparkles, AlertTriangle, Send, Check, Search, ChevronDown, Plus, Ruler, Calculator,
+  Camera, Upload, Wand2, Trash2, Eye, FileText, Box
 } from "lucide-react";
 import { ThreeDProductViewer } from "./ThreeDProductViewer";
 import { Embedded3DCanvas } from "./Embedded3DCanvas";
@@ -48,7 +48,6 @@ export const CustomerCampaignLauncher: React.FC = () => {
   const [is3DFullscreenOpen, setIs3DFullscreenOpen] = useState<boolean>(false);
 
   // 🖼️ Image-to-3D Model Generation State
-  const [isImage3DGenerating, setIsImage3DGenerating] = useState<boolean>(false);
   const [image3DNotice, setImage3DNotice] = useState<string | null>(null);
 
   // Section 3: Material & Accent Customization State
@@ -107,10 +106,10 @@ export const CustomerCampaignLauncher: React.FC = () => {
   const handleConvertPhotoTo3D = async (imgUrl: string, imgName: string) => {
     setIsImage3DGenerating(true);
     setImage3DNotice("Analyzing reference photo pixels & generating 3D procedural model...");
-    
+
     try {
       const spec = await generate3DModelFromImage(imgUrl, imgName);
-      
+
       // Update item name
       if (spec.categoryName) {
         setCustomItemName(spec.categoryName);
@@ -255,8 +254,8 @@ export const CustomerCampaignLauncher: React.FC = () => {
 
   const volumeInSelectedUnit = parsedLength * parsedWidth * parsedHeight;
   const surfaceAreaInSelectedUnit = 2 * (
-    parsedLength * parsedWidth + 
-    parsedWidth * parsedHeight + 
+    parsedLength * parsedWidth +
+    parsedWidth * parsedHeight +
     parsedLength * parsedHeight
   );
 
@@ -342,24 +341,35 @@ export const CustomerCampaignLauncher: React.FC = () => {
     }))
   );
 
-  const quickChipsList = itemSpecificQuickChips.length > 0 
-    ? itemSpecificQuickChips 
+  const quickChipsList = itemSpecificQuickChips.length > 0
+    ? itemSpecificQuickChips
     : activeMaterialSpec.quickChips.map((c) => ({ label: c.label, matchKey: c.matchKey, subcatName: 'Add-ons' }));
 
 
   const handleToggleChip = (chipLabel: string, matchKey: string) => {
     const lowerKey = matchKey.toLowerCase();
+    const isPrimaryMaterial = PRIMARY_MATERIALS.some(m => m.name.toLowerCase().includes(lowerKey) || lowerKey.includes(m.name.toLowerCase()));
+    const accent = SECONDARY_ACCENTS.find(a => a.name.toLowerCase().includes(lowerKey) || lowerKey.includes(a.name.toLowerCase()));
+
     if (lowerAiText.includes(lowerKey) || lowerAiText.includes(chipLabel.toLowerCase())) {
       const regex = new RegExp(`\\b${chipLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.?\\s*`, 'gi');
       setAiDescription((prev) => prev.replace(regex, '').replace(new RegExp(lowerKey, 'gi'), '').trim());
+      if (accent) { toggleAccent(accent.id); }
     } else {
       setAiDescription((prev) => (prev ? `${prev.trim()} ${chipLabel}.` : `${chipLabel}.`));
+      if (isPrimaryMaterial) {
+        const prim = PRIMARY_MATERIALS.find(m => m.name.toLowerCase().includes(lowerKey) || lowerKey.includes(m.name.toLowerCase()));
+        if (prim) setPrimaryMaterial(prim.name);
+      }
+      if (accent) {
+        if (!selectedAccents.includes(accent.id)) toggleAccent(accent.id);
+      }
     }
   };
 
   return (
     <div className="w-full max-w-[1920px] mx-auto space-y-8 px-2 sm:px-4 lg:px-6">
-      
+
       {/* FULL WIDTH HEADER BANNER */}
       <div className="bg-gradient-to-r from-[#1F1510] via-[#1A120E] to-[#120B08] p-6 sm:p-8 rounded-3xl border border-[#3E2E24] shadow-2xl space-y-2">
         <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-[#EA580C]/15 text-[#EA580C] text-xs font-bold border border-[#EA580C]/40 glow-orange">
@@ -397,252 +407,10 @@ export const CustomerCampaignLauncher: React.FC = () => {
 
         {/* 3-COLUMN SIDE-BY-SIDE STUDIO ROW */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* PANEL 1: 3D ITEM INSPECTOR CANVAS (LEFT - 4 COLS) */}
-          <div className="lg:col-span-4 space-y-4">
-            
-            {/* Live Image-to-3D AI Generation Notification Banner */}
-            {image3DNotice && (
-              <div className="bg-[#EA580C]/20 border border-[#EA580C] p-3 rounded-xl text-xs text-amber-200 font-bold flex items-center space-x-2.5 animate-fadeIn shadow-lg">
-                <Sparkles className="w-4 h-4 text-[#EA580C] shrink-0 animate-spin" />
-                <span>{image3DNotice}</span>
-              </div>
-            )}
 
-            <Embedded3DCanvas
-              categoryName={customItemName || selectedProduct.name}
-              materialName={primaryMaterial.name}
-              materialColorHex={woodToneColorHex}
-              roughness={primaryMaterial.roughness ?? 0.4}
-              metalness={primaryMaterial.metalness ?? 0.1}
-              lengthFt={lengthInFt}
-              widthFt={widthInFt}
-              heightFt={heightInFt}
-              accentIds={selectedAccents}
-              finishId={selectedFinish.id}
-              hasDrawers={hasDrawers}
-              drawerCount={drawerCount}
-              hasCarvedLegs={hasCarvedLegs}
-              hasBrassPillars={hasBrassPillars}
-              hasMarbleTop={hasMarbleTop}
-              marbleColor={marbleColor}
-              hasBottomShelf={hasBottomShelf}
-              hasGlassTop={hasGlassTop}
-              hasBrassInlays={hasBrassInlays}
-              hasApronCarving={hasApronCarving}
-              aiPromptText={aiDescription}
-            />
-
-            {/* Material & Feature Tags Badge Row */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] text-slate-300">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="font-mono px-2.5 py-1 rounded-md bg-[#120B08] text-amber-400 border border-[#2A1E17] font-semibold flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: woodToneColorHex }}></span>
-                  <span>Mat: {hasBrassPillars ? 'Moradabad Cast Brass' : (hasMarbleTop ? 'Makrana Marble' : activeMaterialSpec.badgeMatName)}</span>
-                </span>
-                <span className="font-mono px-2.5 py-1 rounded-md bg-[#120B08] text-emerald-400 border border-[#2A1E17] font-semibold">
-                  Polish: {lowerAiText.includes('beeswax') ? 'Organic Beeswax & Linseed Oil' : activeMaterialSpec.badgePolishName}
-                </span>
-              </div>
-              <span className="font-mono px-2.5 py-1 rounded-md bg-[#120B08] text-[#EA580C] border border-[#2A1E17] font-semibold">
-                Features: {[hasDrawers, hasCarvedLegs, hasBrassPillars, hasGlassTop, hasMarbleTop, hasBottomShelf, hasBrassInlays].filter(Boolean).length} Active
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIs3DFullscreenOpen(true)}
-              className="w-full py-3 rounded-xl bg-[#EA580C] hover:bg-[#F97316] text-white text-xs font-bold transition-all shadow-lg glow-orange flex items-center justify-center space-x-2"
-            >
-              <Eye className="w-4 h-4" />
-              <span>Launch Fullscreen 3D Viewport Inspector</span>
-            </button>
-          </div>
-
-          {/* PANEL 2: ✨ AI PROMPT TEXT EDITOR & LIVE TECHNICAL SPEC SHEET (CENTER - 4 COLS) */}
-          <div className="lg:col-span-4 space-y-4 bg-[#120B08] p-5 rounded-2xl border border-[#3E2E24] shadow-inner">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                <Wand2 className="w-4 h-4 text-[#EA580C]" />
-                <span>AI Prompt & Feature Injector</span>
-              </span>
-              <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">
-                Live Auto-Parse
-              </span>
-            </div>
-
-            {/* AI Textarea */}
-            <div className="space-y-1.5">
-              <textarea
-                rows={3}
-                value={aiDescription}
-                onChange={(e) => setAiDescription(e.target.value)}
-                placeholder="Type custom specs or click Quick Chips below to inject materials & features..."
-                className="w-full bg-[#1F1510] border border-[#3E2E24] focus:border-[#EA580C] p-3 rounded-xl text-white text-xs font-medium focus:outline-none resize-none shadow-inner"
-              ></textarea>
-              <span className="text-[10px] text-slate-400 block font-mono">
-                Type words like "drawers", "carved legs", "glass top", "marble", or click materials below.
-              </span>
-            </div>
-
-            {/* 🏷️ DYNAMIC ITEM-SPECIFIC SUBCATEGORY QUICK CHIPS */}
-            <div className="space-y-2 pt-1 border-t border-[#2A1E17]">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[#EA580C] font-extrabold uppercase tracking-wider block">
-                  Quick Chips ({selectedProduct.name} Material Add-ons):
-                </span>
-                <span className="text-[9px] text-amber-400 font-mono font-bold">
-                  click to Toggle 3D Feature
-                </span>
-              </div>
-
-              {activeSubcategories.length > 0 ? (
-                <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
-                  {activeSubcategories.map((subcat) => (
-                    <div key={subcat.id} className="space-y-1 bg-[#1F1510] p-2.5 rounded-xl border border-[#2A1E17]">
-                      <span className="text-[10px] text-amber-300 font-mono font-bold block border-b border-[#2A1E17]/60 pb-1">
-                        📌 {subcat.name}:
-                      </span>
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        {subcat.materials.map((mat) => {
-                          const isActive = lowerAiText.includes(mat.toLowerCase()) || lowerAiText.includes(mat.toLowerCase().slice(0, Math.min(6, mat.length)));
-                          return (
-                            <button
-                              key={mat}
-                              type="button"
-                              onClick={() => handleToggleChip(mat, mat.toLowerCase())}
-                              className={`text-[10px] px-2.5 py-1 rounded-lg transition-all border font-medium flex items-center gap-1.5 ${
-                                isActive
-                                  ? "bg-[#EA580C]/25 border-[#EA580C] text-amber-300 font-bold shadow glow-orange scale-105"
-                                  : "bg-[#120B08] hover:bg-[#261B15] text-slate-300 border-[#2A1E17] hover:border-[#EA580C]/50"
-                              }`}
-                            >
-                              <span>{isActive ? '✓' : '+'}</span>
-                              <span>{mat}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {quickChipsList.map((chip) => {
-                    const isActive = lowerAiText.includes(chip.matchKey);
-                    return (
-                      <button
-                        key={chip.label}
-                        type="button"
-                        onClick={() => handleToggleChip(chip.label, chip.matchKey)}
-                        className={`text-[10px] px-2.5 py-1 rounded-lg transition-all border font-medium flex items-center gap-1.5 ${
-                          isActive
-                            ? "bg-[#EA580C]/20 border-[#EA580C] text-amber-300 font-bold shadow glow-orange scale-105"
-                            : "bg-[#1F1510] hover:bg-[#261B15] text-slate-300 border-[#2A1E17] hover:border-[#EA580C]/50"
-                        }`}
-                      >
-                        <span>{isActive ? '✓' : '+'}</span>
-                        <span>{chip.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* AI Enhance Specs Button */}
-            <button
-              type="button"
-              onClick={handleAiEnhance}
-              disabled={isAiEnhancing}
-              className="w-full py-2.5 rounded-xl bg-[#1F1510] hover:bg-[#261B15] text-[#EA580C] hover:text-white text-xs font-bold border border-[#EA580C]/40 transition-all flex items-center justify-center space-x-2"
-            >
-              <Wand2 className={`w-4 h-4 ${isAiEnhancing ? 'animate-spin' : ''}`} />
-              <span>{isAiEnhancing ? 'Generating Technical Spec Sheet...' : '✨ AI Enhance & Force Re-Sync'}</span>
-            </button>
-
-            {/* 📋 LIVE TECHNICAL SPEC SHEET PANEL */}
-            <div className="p-3.5 rounded-xl bg-[#1F1510] border border-[#EA580C]/50 space-y-3 animate-fadeIn">
-              <div className="flex items-center justify-between text-[#EA580C]">
-                <div className="flex items-center space-x-1.5">
-                  <FileText className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider">Live Technical Spec Sheet</span>
-                </div>
-                <span className="text-[9px] text-emerald-400 font-mono font-bold bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">
-                  Auto-Synced
-                </span>
-              </div>
-
-              {/* ⚡ 5️⃣ DYNAMIC 4-GRID SPECIFICATIONS */}
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                {/* JOINERY */}
-                <div className="bg-[#120B08] p-2.5 rounded-lg border border-[#2A1E17] shadow-inner">
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-0.5">JOINERY</span>
-                  <p className="text-[11px] text-white font-semibold">
-                    {hasCarvedLegs ? 'Rajasthani Hand-Carved Mortise & Tenon' : activeMaterialSpec.joineryConstruction || 'Traditional Mortise & Tenon'}
-                  </p>
-                </div>
-                {/* TIMBER QUALITY */}
-                <div className="bg-[#120B08] p-2.5 rounded-lg border border-[#2A1E17] shadow-inner">
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-0.5">TIMBER QUALITY</span>
-                  <p className="text-[11px] text-emerald-400 font-semibold">
-                    Kiln-Dried Timber Seasoned to &lt;10% Moisture
-                  </p>
-                </div>
-                {/* SURFACE POLISH */}
-                <div className="bg-[#120B08] p-2.5 rounded-lg border border-[#2A1E17] shadow-inner">
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-0.5">SURFACE POLISH</span>
-                  <p className="text-[11px] text-white font-semibold">
-                    {lowerAiText.includes('beeswax') ? '3 Hand-Rubbed Beeswax Polish Layers' : activeMaterialSpec.badgePolishName}
-                  </p>
-                </div>
-                {/* INLAY DETAIL */}
-                <div className="bg-[#120B08] p-2.5 rounded-lg border border-[#2A1E17] shadow-inner">
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-0.5">INLAY DETAIL</span>
-                  <p className="text-[11px] text-[#EAB308] font-semibold">
-                    {hasBrassInlays ? 'High-Density 18 Gauge Solid Brass Wire Inlay' : (hasMarbleTop ? 'Makrana Marble Inlay' : 'Standard Finish')}
-                  </p>
-                </div>
-              </div>
-
-              {/* ⚡ 5️⃣ ACTIVE 3D MODEL ADD-ONS & FEATURES INJECTED */}
-              <div className="bg-[#120B08] p-3.5 rounded-xl border border-[#EA580C]/40 space-y-2.5 shadow-inner mt-3">
-                <div className="flex items-center justify-between pb-1 border-b border-[#2A1E17]">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-2 h-2 rounded-full bg-[#EA580C] animate-pulse"></span>
-                    <span className="text-[11px] text-[#EA580C] font-extrabold uppercase tracking-wider block">
-                      ACTIVE MATERIALS & ADD-ONS:
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  {breakdown.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-[#1A120E] p-2 rounded-lg border border-[#2A1E17]">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-white font-semibold">{item.materialName}</span>
-                        <span className="text-[10px] text-slate-400">{item.role} • {item.quantity} {item.unit}</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span className="text-xs text-[#EAB308] font-mono">₹{Math.round(item.lineAvg).toLocaleString('en-IN')}</span>
-                        <button 
-                          onClick={() => removeSlot(item.role, selectedSlots.find(s => s.role === item.role)?.rateKey || "")}
-                          className="w-6 h-6 rounded-full bg-red-950/40 text-red-400 flex items-center justify-center hover:bg-red-900/60 hover:text-red-300 transition-colors border border-red-900/30"
-                          title="Remove Material"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* PANEL 3: CATEGORY, SIZE EDITOR & REFERENCE PHOTO UPLOAD (RIGHT - 4 COLS) */}
+          {/* PANEL 3: CATEGORY, SIZE EDITOR & REFERENCE PHOTO UPLOAD (LEFT - 4 COLS) */}
           <div className="lg:col-span-4 space-y-5 bg-[#120B08] p-5 rounded-2xl border border-[#3E2E24] shadow-inner">
-            
+
             {/* 1️⃣ TOP: SELECT OR TYPE CUSTOM ITEM CATEGORY */}
             <div className="space-y-2 relative" ref={dropdownRef}>
               <div className="flex items-center justify-between">
@@ -655,7 +423,7 @@ export const CustomerCampaignLauncher: React.FC = () => {
               </div>
 
               {/* Input Trigger Field */}
-              <div 
+              <div
                 onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
                 className="relative w-full cursor-pointer bg-[#1F1510] border border-[#3E2E24] hover:border-[#EA580C] rounded-xl p-3 flex items-center justify-between transition-all shadow-inner"
               >
@@ -713,11 +481,10 @@ export const CustomerCampaignLauncher: React.FC = () => {
                           setDisplayWidth(convertFromFeet(prod.defaultWidth, dimensionUnit));
                           setDisplayHeight(convertFromFeet(prod.defaultHeight, dimensionUnit));
                         }}
-                        className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between ${
-                          selectedProduct.id === prod.id && !customItemName
+                        className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between ${selectedProduct.id === prod.id && !customItemName
                             ? "bg-[#EA580C] text-white font-bold shadow-md glow-orange"
                             : "hover:bg-[#1F1510] text-slate-300 hover:text-white"
-                        }`}
+                          }`}
                       >
                         <div>
                           <div className="text-xs font-bold">{prod.name}</div>
@@ -733,7 +500,7 @@ export const CustomerCampaignLauncher: React.FC = () => {
 
             {/* 2️⃣ MIDDLE: CUSTOM DIMENSION EDITOR WITH UNIT CONVERTER */}
             <div className="space-y-3 bg-[#120B08] p-4 rounded-2xl border border-[#2A1E17]">
-              
+
               {/* Header & Unit Selector Row */}
               <div className="flex items-center justify-between border-b border-[#2A1E17] pb-2.5">
                 <div className="flex items-center space-x-1.5">
@@ -750,11 +517,10 @@ export const CustomerCampaignLauncher: React.FC = () => {
                       key={unit}
                       type="button"
                       onClick={() => handleUnitChange(unit)}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase transition-all ${
-                        dimensionUnit === unit
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase transition-all ${dimensionUnit === unit
                           ? "bg-[#EA580C] text-white shadow-md glow-orange"
                           : "text-slate-400 hover:text-white hover:bg-[#120B08]"
-                      }`}
+                        }`}
                     >
                       {unit}
                     </button>
@@ -800,17 +566,17 @@ export const CustomerCampaignLauncher: React.FC = () => {
                     )}
                   </div>
                   <div className="relative flex items-center">
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       step={dimensionUnit === 'cm' || dimensionUnit === 'in' ? "1" : "0.1"}
-                      value={displayLength} 
-                      onChange={(e) => setDisplayLength(e.target.value)} 
+                      value={displayLength}
+                      onChange={(e) => setDisplayLength(e.target.value)}
                       onBlur={() => {
                         if (displayLength === '' || parseFloat(displayLength.toString()) <= 0) {
                           setDisplayLength(1);
                         }
                       }}
-                      className="w-full bg-[#1F1510] border border-[#3E2E24] p-2 pr-8 rounded-xl text-white font-mono font-bold text-xs focus:outline-none focus:border-[#EA580C] shadow-inner" 
+                      className="w-full bg-[#1F1510] border border-[#3E2E24] p-2 pr-8 rounded-xl text-white font-mono font-bold text-xs focus:outline-none focus:border-[#EA580C] shadow-inner"
                     />
                     <span className="absolute right-2 text-[10px] font-mono text-slate-400 font-bold uppercase pointer-events-none">{dimensionUnit}</span>
                   </div>
@@ -824,17 +590,17 @@ export const CustomerCampaignLauncher: React.FC = () => {
                     )}
                   </div>
                   <div className="relative flex items-center">
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       step={dimensionUnit === 'cm' || dimensionUnit === 'in' ? "1" : "0.1"}
-                      value={displayWidth} 
-                      onChange={(e) => setDisplayWidth(e.target.value)} 
+                      value={displayWidth}
+                      onChange={(e) => setDisplayWidth(e.target.value)}
                       onBlur={() => {
                         if (displayWidth === '' || parseFloat(displayWidth.toString()) <= 0) {
                           setDisplayWidth(1);
                         }
                       }}
-                      className="w-full bg-[#1F1510] border border-[#3E2E24] p-2 pr-8 rounded-xl text-white font-mono font-bold text-xs focus:outline-none focus:border-[#EA580C] shadow-inner" 
+                      className="w-full bg-[#1F1510] border border-[#3E2E24] p-2 pr-8 rounded-xl text-white font-mono font-bold text-xs focus:outline-none focus:border-[#EA580C] shadow-inner"
                     />
                     <span className="absolute right-2 text-[10px] font-mono text-slate-400 font-bold uppercase pointer-events-none">{dimensionUnit}</span>
                   </div>
@@ -848,17 +614,17 @@ export const CustomerCampaignLauncher: React.FC = () => {
                     )}
                   </div>
                   <div className="relative flex items-center">
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       step={dimensionUnit === 'cm' || dimensionUnit === 'in' ? "1" : "0.1"}
-                      value={displayHeight} 
-                      onChange={(e) => setDisplayHeight(e.target.value)} 
+                      value={displayHeight}
+                      onChange={(e) => setDisplayHeight(e.target.value)}
                       onBlur={() => {
                         if (displayHeight === '' || parseFloat(displayHeight.toString()) <= 0) {
                           setDisplayHeight(1);
                         }
                       }}
-                      className="w-full bg-[#1F1510] border border-[#3E2E24] p-2 pr-8 rounded-xl text-white font-mono font-bold text-xs focus:outline-none focus:border-[#EA580C] shadow-inner" 
+                      className="w-full bg-[#1F1510] border border-[#3E2E24] p-2 pr-8 rounded-xl text-white font-mono font-bold text-xs focus:outline-none focus:border-[#EA580C] shadow-inner"
                     />
                     <span className="absolute right-2 text-[10px] font-mono text-slate-400 font-bold uppercase pointer-events-none">{dimensionUnit}</span>
                   </div>
@@ -946,15 +712,17 @@ export const CustomerCampaignLauncher: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* ⚡ Instant Photo-to-3D Converter Button */}
+                  {/* ⚡ Launch Campaign Button (Reference Photo) */}
                   <button
                     type="button"
-                    onClick={() => handleConvertPhotoTo3D(uploadedPhotoUrl, uploadedPhotoName)}
-                    disabled={isImage3DGenerating}
+                    onClick={() => {
+                      const el = document.getElementById("broadcast-btn");
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
                     className="w-full py-2.5 rounded-xl bg-[#EA580C] hover:bg-[#F97316] text-white text-xs font-bold transition-all shadow-md glow-orange flex items-center justify-center space-x-2"
                   >
-                    <Box className={`w-4 h-4 ${isImage3DGenerating ? 'animate-spin' : ''}`} />
-                    <span>{isImage3DGenerating ? 'Converting Image to 3D Model...' : '✨ Generate & Show in 3D Inspector'}</span>
+                    <Send className="w-4 h-4" />
+                    <span>🚀 Proceed to Launch Campaign</span>
                   </button>
                 </div>
               ) : (
@@ -972,17 +740,259 @@ export const CustomerCampaignLauncher: React.FC = () => {
             </div>
 
           </div>
+        {/* PANEL 1: 3D ITEM INSPECTOR CANVAS (CENTER - 4 COLS) */}
+        <div className="lg:col-span-4 space-y-4">
+
+          {/* Live Image-to-3D AI Generation Notification Banner */}
+          {image3DNotice && (
+            <div className="bg-[#EA580C]/20 border border-[#EA580C] p-3 rounded-xl text-xs text-amber-200 font-bold flex items-center space-x-2.5 animate-fadeIn shadow-lg">
+              <Sparkles className="w-4 h-4 text-[#EA580C] shrink-0 animate-spin" />
+              <span>{image3DNotice}</span>
+            </div>
+          )}
+
+          <Embedded3DCanvas
+            categoryName={customItemName || selectedProduct.name}
+            materialName={primaryMaterial.name}
+            materialColorHex={woodToneColorHex}
+            roughness={primaryMaterial.roughness ?? 0.4}
+            metalness={primaryMaterial.metalness ?? 0.1}
+            lengthFt={lengthInFt}
+            widthFt={widthInFt}
+            heightFt={heightInFt}
+            accentIds={selectedAccents}
+            finishId={selectedFinish.id}
+            hasDrawers={hasDrawers}
+            drawerCount={drawerCount}
+            hasCarvedLegs={hasCarvedLegs}
+            hasBrassPillars={hasBrassPillars}
+            hasMarbleTop={hasMarbleTop}
+            marbleColor={marbleColor}
+            hasBottomShelf={hasBottomShelf}
+            hasGlassTop={hasGlassTop}
+            hasBrassInlays={hasBrassInlays}
+            hasApronCarving={hasApronCarving}
+            aiPromptText={aiDescription}
+          />
+
+          {/* Material & Feature Tags Badge Row */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] text-slate-300">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-mono px-2.5 py-1 rounded-md bg-[#120B08] text-amber-400 border border-[#2A1E17] font-semibold flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: woodToneColorHex }}></span>
+                <span>Mat: {hasBrassPillars ? 'Moradabad Cast Brass' : (hasMarbleTop ? 'Makrana Marble' : activeMaterialSpec.badgeMatName)}</span>
+              </span>
+              <span className="font-mono px-2.5 py-1 rounded-md bg-[#120B08] text-emerald-400 border border-[#2A1E17] font-semibold">
+                Polish: {lowerAiText.includes('beeswax') ? 'Organic Beeswax & Linseed Oil' : activeMaterialSpec.badgePolishName}
+              </span>
+            </div>
+            <span className="font-mono px-2.5 py-1 rounded-md bg-[#120B08] text-[#EA580C] border border-[#2A1E17] font-semibold">
+              Features: {[hasDrawers, hasCarvedLegs, hasBrassPillars, hasGlassTop, hasMarbleTop, hasBottomShelf, hasBrassInlays].filter(Boolean).length} Active
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIs3DFullscreenOpen(true)}
+            className="w-full py-3 rounded-xl bg-[#EA580C] hover:bg-[#F97316] text-white text-xs font-bold transition-all shadow-lg glow-orange flex items-center justify-center space-x-2"
+          >
+            <Eye className="w-4 h-4" />
+            <span>Launch Fullscreen 3D Viewport Inspector</span>
+          </button>
         </div>
+
+        {/* PANEL 2: ✨ AI PROMPT TEXT EDITOR & LIVE TECHNICAL SPEC SHEET (RIGHT - 4 COLS) */}
+        <div className="lg:col-span-4 space-y-4 bg-[#120B08] p-5 rounded-2xl border border-[#3E2E24] shadow-inner">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+              <Wand2 className="w-4 h-4 text-[#EA580C]" />
+              <span>AI Prompt & Feature Injector</span>
+            </span>
+            <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">
+              Live Auto-Parse
+            </span>
+          </div>
+
+          {/* AI Textarea */}
+          <div className="space-y-1.5">
+            <textarea
+              rows={3}
+              value={aiDescription}
+              onChange={(e) => setAiDescription(e.target.value)}
+              placeholder="Type custom specs or click Quick Chips below to inject materials & features..."
+              className="w-full bg-[#1F1510] border border-[#3E2E24] focus:border-[#EA580C] p-3 rounded-xl text-white text-xs font-medium focus:outline-none resize-none shadow-inner"
+            ></textarea>
+            <span className="text-[10px] text-slate-400 block font-mono">
+              Type words like "drawers", "carved legs", "glass top", "marble", or click materials below.
+            </span>
+          </div>
+
+          {/* 🏷️ DYNAMIC ITEM-SPECIFIC SUBCATEGORY QUICK CHIPS */}
+          <div className="space-y-2 pt-1 border-t border-[#2A1E17]">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-[#EA580C] font-extrabold uppercase tracking-wider block">
+                Quick Chips ({selectedProduct.name} Material Add-ons):
+              </span>
+              <span className="text-[9px] text-amber-400 font-mono font-bold">
+                click to Toggle 3D Feature
+              </span>
+            </div>
+
+            {activeSubcategories.length > 0 ? (
+              <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+                {activeSubcategories.map((subcat) => (
+                  <div key={subcat.id} className="space-y-1 bg-[#1F1510] p-2.5 rounded-xl border border-[#2A1E17]">
+                    <span className="text-[10px] text-amber-300 font-mono font-bold block border-b border-[#2A1E17]/60 pb-1">
+                      📌 {subcat.name}:
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      {subcat.materials.map((mat) => {
+                        const isActive = lowerAiText.includes(mat.toLowerCase()) || lowerAiText.includes(mat.toLowerCase().slice(0, Math.min(6, mat.length)));
+                        return (
+                          <button
+                            key={mat}
+                            type="button"
+                            onClick={() => handleToggleChip(mat, mat.toLowerCase())}
+                            className={`text-[10px] px-2.5 py-1 rounded-lg transition-all border font-medium flex items-center gap-1.5 ${isActive
+                                ? "bg-[#EA580C]/25 border-[#EA580C] text-amber-300 font-bold shadow glow-orange scale-105"
+                                : "bg-[#120B08] hover:bg-[#261B15] text-slate-300 border-[#2A1E17] hover:border-[#EA580C]/50"
+                              }`}
+                          >
+                            <span>{isActive ? '✓' : '+'}</span>
+                            <span>{mat}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {quickChipsList.map((chip) => {
+                  const isActive = lowerAiText.includes(chip.matchKey);
+                  return (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      onClick={() => handleToggleChip(chip.label, chip.matchKey)}
+                      className={`text-[10px] px-2.5 py-1 rounded-lg transition-all border font-medium flex items-center gap-1.5 ${isActive
+                          ? "bg-[#EA580C]/20 border-[#EA580C] text-amber-300 font-bold shadow glow-orange scale-105"
+                          : "bg-[#1F1510] hover:bg-[#261B15] text-slate-300 border-[#2A1E17] hover:border-[#EA580C]/50"
+                        }`}
+                    >
+                      <span>{isActive ? '✓' : '+'}</span>
+                      <span>{chip.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ⚡ 5️⃣ ACTIVE 3D MODEL ADD-ONS & FEATURES INJECTED */}
+          <div className="bg-[#120B08] p-3.5 rounded-xl border border-[#EA580C]/40 space-y-2.5 shadow-inner mt-3">
+            <div className="flex items-center justify-between pb-1 border-b border-[#2A1E17]">
+              <div className="flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-[#EA580C] animate-pulse"></span>
+                <span className="text-[11px] text-[#EA580C] font-extrabold uppercase tracking-wider block">
+                  ACTIVE MATERIALS & ADD-ONS:
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {breakdown.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-[#1A120E] p-2 rounded-lg border border-[#2A1E17]">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-white font-semibold">{item.materialName}</span>
+                    <span className="text-[10px] text-slate-400">{item.role} • {item.quantity} {item.unit}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-xs text-[#EAB308] font-mono">₹{Math.round(item.lineAvg).toLocaleString('en-IN')}</span>
+                    <button
+                      onClick={() => removeSlot(item.role, selectedSlots.find(s => s.role === item.role)?.rateKey || "")}
+                      className="w-6 h-6 rounded-full bg-red-950/40 text-red-400 flex items-center justify-center hover:bg-red-900/60 hover:text-red-300 transition-colors border border-red-900/30"
+                      title="Remove Material"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* AI Enhance Specs Button */}
+          <button
+            type="button"
+            onClick={handleAiEnhance}
+            disabled={isAiEnhancing}
+            className="w-full py-2.5 rounded-xl bg-[#1F1510] hover:bg-[#261B15] text-[#EA580C] hover:text-white text-xs font-bold border border-[#EA580C]/40 transition-all flex items-center justify-center space-x-2"
+          >
+            <Wand2 className={`w-4 h-4 ${isAiEnhancing ? 'animate-spin' : ''}`} />
+            <span>{isAiEnhancing ? 'Generating Technical Spec Sheet...' : '✨ AI Enhance & Force Re-Sync'}</span>
+          </button>
+
+          {/* 📋 LIVE TECHNICAL SPEC SHEET PANEL */}
+          <div className="p-3.5 rounded-xl bg-[#1F1510] border border-[#EA580C]/50 space-y-3 animate-fadeIn">
+            <div className="flex items-center justify-between text-[#EA580C]">
+              <div className="flex items-center space-x-1.5">
+                <FileText className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-bold uppercase tracking-wider">Live Technical Spec Sheet</span>
+              </div>
+              <span className="text-[9px] text-emerald-400 font-mono font-bold bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">
+                Auto-Synced
+              </span>
+            </div>
+
+            {/* ⚡ 5️⃣ DYNAMIC 4-GRID SPECIFICATIONS */}
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              {/* JOINERY */}
+              <div className="bg-[#120B08] p-2.5 rounded-lg border border-[#2A1E17] shadow-inner">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-0.5">JOINERY</span>
+                <p className="text-[11px] text-white font-semibold">
+                  {hasCarvedLegs ? 'Rajasthani Hand-Carved Mortise & Tenon' : activeMaterialSpec.joineryConstruction || 'Traditional Mortise & Tenon'}
+                </p>
+              </div>
+              {/* TIMBER QUALITY */}
+              <div className="bg-[#120B08] p-2.5 rounded-lg border border-[#2A1E17] shadow-inner">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-0.5">TIMBER QUALITY</span>
+                <p className="text-[11px] text-emerald-400 font-semibold">
+                  Kiln-Dried Timber Seasoned to &lt;10% Moisture
+                </p>
+              </div>
+              {/* SURFACE POLISH */}
+              <div className="bg-[#120B08] p-2.5 rounded-lg border border-[#2A1E17] shadow-inner">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-0.5">SURFACE POLISH</span>
+                <p className="text-[11px] text-white font-semibold">
+                  {lowerAiText.includes('beeswax') ? '3 Hand-Rubbed Beeswax Polish Layers' : activeMaterialSpec.badgePolishName}
+                </p>
+              </div>
+              {/* INLAY DETAIL */}
+              <div className="bg-[#120B08] p-2.5 rounded-lg border border-[#2A1E17] shadow-inner">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-0.5">INLAY DETAIL</span>
+                <p className="text-[11px] text-[#EAB308] font-semibold">
+                  {hasBrassInlays ? 'High-Density 18 Gauge Solid Brass Wire Inlay' : (hasMarbleTop ? 'Makrana Marble Inlay' : 'Standard Finish')}
+                </p>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
+        </div>
+
       </div>
 
       {/* ========================================================================= */}
       {/* FORM SPECIFICATIONS & DYNAMIC PRICE ESTIMATOR GRID (7 COLS / 5 COLS) */}
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
+
         {/* LEFT COLUMN: MATERIAL, FINISH & CRAFTSMANSHIP SPECIFICATION BUILDER (7 COLS) */}
         <div className="lg:col-span-7 bg-gradient-to-b from-[#1F1510] to-[#120B08] p-6 sm:p-8 rounded-3xl border border-[#3E2E24] shadow-2xl space-y-7">
-          
+
           {/* 4️⃣ SUBCATEGORIES & MATERIAL BLUEPRINT FOR SELECTED ITEM */}
           {selectedProduct.subcategories && selectedProduct.subcategories.length > 0 && (
             <div className="space-y-4 bg-[#120B08] p-4 sm:p-5 rounded-2xl border border-[#EA580C]/40">
@@ -1010,11 +1020,10 @@ export const CustomerCampaignLauncher: React.FC = () => {
                             key={mat}
                             type="button"
                             onClick={() => handleToggleChip(mat, mat.toLowerCase().slice(0, 5))}
-                            className={`text-[10px] font-medium px-2.5 py-1 rounded-lg border transition-all ${
-                              isSelectedMat
+                            className={`text-[10px] font-medium px-2.5 py-1 rounded-lg border transition-all ${isSelectedMat
                                 ? "bg-[#EA580C] text-white border-[#EA580C] font-bold shadow"
                                 : "bg-[#120B08] text-slate-300 border-[#2A1E17] hover:border-[#EA580C] hover:text-white"
-                            }`}
+                              }`}
                             title={`Click to add/remove "${mat}" in AI specification`}
                           >
                             {mat}
@@ -1047,11 +1056,10 @@ export const CustomerCampaignLauncher: React.FC = () => {
                     key={m.id}
                     type="button"
                     onClick={() => setPrimaryMaterial(m.name)}
-                    className={`text-left p-3.5 rounded-2xl border text-xs transition-all duration-300 ${
-                      isSelected
+                    className={`text-left p-3.5 rounded-2xl border text-xs transition-all duration-300 ${isSelected
                         ? "border-[#EA580C] bg-[#EA580C]/20 text-white font-semibold shadow-lg glow-orange"
                         : "border-[#2A1E17] bg-[#120B08] text-slate-400 hover:border-[#3E2E24] hover:text-white"
-                    }`}
+                      }`}
                   >
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-white text-sm">{m.name}</span>
@@ -1075,13 +1083,12 @@ export const CustomerCampaignLauncher: React.FC = () => {
               {SECONDARY_ACCENTS.map((acc) => {
                 const isSelected = selectedAccents.includes(acc.id);
                 return (
-                  <label 
-                    key={acc.id} 
-                    className={`flex items-center justify-between p-3.5 rounded-2xl text-xs cursor-pointer border transition-all ${
-                      isSelected
+                  <label
+                    key={acc.id}
+                    className={`flex items-center justify-between p-3.5 rounded-2xl text-xs cursor-pointer border transition-all ${isSelected
                         ? "bg-[#EA580C]/20 border-[#EA580C] text-white font-semibold shadow-md"
                         : "bg-[#120B08] border-[#2A1E17] text-slate-400 hover:border-[#3E2E24] hover:text-slate-200"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center space-x-3">
                       <input
@@ -1114,11 +1121,10 @@ export const CustomerCampaignLauncher: React.FC = () => {
                     key={f.id}
                     type="button"
                     onClick={() => setFinish(f.name)}
-                    className={`p-3 rounded-2xl border text-left text-xs transition-all ${
-                      isSelected
+                    className={`p-3 rounded-2xl border text-left text-xs transition-all ${isSelected
                         ? "border-[#EA580C] bg-[#EA580C]/20 text-white font-semibold shadow-md"
                         : "border-[#2A1E17] bg-[#120B08] text-slate-400 hover:text-slate-200"
-                    }`}
+                      }`}
                   >
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-white">{f.name}</span>
@@ -1138,7 +1144,7 @@ export const CustomerCampaignLauncher: React.FC = () => {
               <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5">
                 Craftsmanship Grade:
               </label>
-              <select 
+              <select
                 className="w-full bg-[#120B08] border border-[#3E2E24] text-white font-semibold rounded-2xl p-3 text-xs focus:outline-none focus:border-[#EA580C] shadow-inner"
                 value={selectedGrade.id}
                 onChange={(e) => setSelectedGrade(CRAFTSMANSHIP_GRADES.find((g) => g.id === e.target.value) || CRAFTSMANSHIP_GRADES[1])}
@@ -1153,7 +1159,7 @@ export const CustomerCampaignLauncher: React.FC = () => {
               <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5">
                 Target Delivery Locality:
               </label>
-              <select 
+              <select
                 className="w-full bg-[#120B08] border border-[#3E2E24] text-white font-semibold rounded-2xl p-3 text-xs focus:outline-none focus:border-[#EA580C] shadow-inner"
                 value={selectedLocality.pincode}
                 onChange={(e) => setSelectedLocality(LOCALITIES.find((l) => l.pincode === e.target.value) || LOCALITIES[0])}
@@ -1169,7 +1175,7 @@ export const CustomerCampaignLauncher: React.FC = () => {
 
         {/* RIGHT COLUMN: STICKY DYNAMIC PRICE ESTIMATOR RESULT & BROADCAST CTA (5 COLS) */}
         <div className="lg:col-span-5 lg:sticky lg:top-6 space-y-6">
-          
+
           {/* 📊 DYNAMIC ESTIMATED PRICE CALCULATOR RESULT PANEL */}
           <div className="bg-[#1A120E] border-2 border-[#EA580C] p-6 sm:p-7 rounded-3xl space-y-5 shadow-2xl">
             <div className="flex items-center justify-between">
@@ -1181,13 +1187,25 @@ export const CustomerCampaignLauncher: React.FC = () => {
               </span>
             </div>
 
-            <div className="text-3xl sm:text-4xl font-extrabold text-[#EAB308] font-mono glow-orange">
-              ₹{rangeMin.toLocaleString("en-IN")} – ₹{rangeMax.toLocaleString("en-IN")}
-            </div>
+            {uploadedPhotoUrl ? (
+              <div className="flex flex-col items-center justify-center py-6 text-center space-y-3">
+                <span className="text-4xl">🤝</span>
+                <h4 className="text-lg font-bold text-[#EA580C]">Custom Design Uploaded</h4>
+                <p className="text-sm text-slate-300">
+                  Since a custom reference photo was provided, the exact price will be discussed and finalized directly between you and the artisan.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="text-3xl sm:text-4xl font-extrabold text-[#EAB308] font-mono glow-orange">
+                  ₹{rangeMin.toLocaleString("en-IN")} – ₹{rangeMax.toLocaleString("en-IN")}
+                </div>
 
-            <div className="text-xs text-slate-300">
-              Calculated Area Average: <span className="text-white font-extrabold font-mono text-base">₹{Math.round(calculatedAverage).toLocaleString("en-IN")}.00</span>
-            </div>
+                <div className="text-xs text-slate-300">
+                  Calculated Area Average: <span className="text-white font-extrabold font-mono text-base">₹{Math.round(calculatedAverage).toLocaleString("en-IN")}.00</span>
+                </div>
+              </>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#3E2E24]">
               <div>
@@ -1230,14 +1248,14 @@ export const CustomerCampaignLauncher: React.FC = () => {
             </div>
 
             {/* CTA Broadcast Button */}
-            <button 
+            <button
+              id="broadcast-btn"
               onClick={handleBroadcast}
               disabled={isBroadcasted}
-              className={`w-full py-4 rounded-2xl text-sm font-bold text-white transition-all shadow-2xl flex items-center justify-center space-x-2 ${
-                isBroadcasted
+              className={`w-full py-4 rounded-2xl text-sm font-bold text-white transition-all shadow-2xl flex items-center justify-center space-x-2 ${isBroadcasted
                   ? "bg-emerald-600 cursor-not-allowed"
                   : "bg-[#EA580C] hover:bg-[#C2410C] glow-orange"
-              }`}
+                }`}
             >
               {isBroadcasted ? (
                 <>

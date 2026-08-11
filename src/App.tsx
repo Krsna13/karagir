@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AppMode, LocationPin, Artisan } from './types';
+import type { AppMode, LocationPin, Artisan, Product } from './types';
 import { NASHIK_LOCALITIES, MOCK_ARTISANS } from './data/mockData';
 import { Navbar } from './components/Navbar';
 import { BuyerDiscovery } from './components/BuyerDiscovery';
@@ -9,6 +9,7 @@ import { ArtisanStorefront } from './components/ArtisanStorefront';
 import { MilestoneTracker } from './components/MilestoneTracker';
 import { ArtisanPortal } from './components/ArtisanPortal';
 import { WorkshopReelModal } from './components/WorkshopReelModal';
+import { ArtisanProduct3DEditor } from './components/ArtisanProduct3DEditor';
 import { MaterialProvider } from './context/MaterialContext';
 import { Hammer, ShieldCheck, Heart, MapPin } from 'lucide-react';
 
@@ -18,6 +19,7 @@ export function App() {
   const [selectedLocation, setSelectedLocation] = useState<LocationPin>(NASHIK_LOCALITIES[0]);
   const [selectedArtisan, setSelectedArtisan] = useState<Artisan>(MOCK_ARTISANS[0]);
   const [activeReelArtisan, setActiveReelArtisan] = useState<Artisan | null>(null);
+  const [selectedProductForCustomization, setSelectedProductForCustomization] = useState<Product | null>(null);
 
   const handleSelectArtisan = (artisan: Artisan) => {
     setSelectedArtisan(artisan);
@@ -64,7 +66,31 @@ export function App() {
                 {activeTab === 'find-local-artisans' && (
                   <FindLocalArtisansPage
                     onBackToHome={() => setActiveTab('find-artisans')}
-                    onSelectArtisanStorefront={() => setActiveTab('artisan-storefront')}
+                    onSelectArtisanStorefront={(regionalArtisan) => {
+                      const convertedArtisan: Artisan = {
+                        id: regionalArtisan.id,
+                        name: regionalArtisan.name,
+                        shopName: regionalArtisan.shopName,
+                        experienceYears: regionalArtisan.experienceYears,
+                        rating: regionalArtisan.rating,
+                        reviewsCount: 150,
+                        isVerified: regionalArtisan.isVerified,
+                        avatarUrl: regionalArtisan.image,
+                        coverUrl: regionalArtisan.image,
+                        locality: regionalArtisan.area,
+                        pincode: regionalArtisan.pincode,
+                        distanceKm: 2.5,
+                        lat: regionalArtisan.lat,
+                        lng: regionalArtisan.lng,
+                        crafts: ['Woodwork'], // Default fallback
+                        specialties: [regionalArtisan.craftCategory],
+                        responseTime: '~2 hours',
+                        completedOrdersCount: 100,
+                        bio: regionalArtisan.bio
+                      };
+                      setSelectedArtisan(convertedArtisan);
+                      setActiveTab('artisan-storefront');
+                    }}
                   />
                 )}
 
@@ -80,8 +106,27 @@ export function App() {
                   <ArtisanStorefront
                     artisan={selectedArtisan}
                     onOpenReel={(artisan) => setActiveReelArtisan(artisan)}
+                    onCustomizeProduct={(product) => {
+                      setSelectedProductForCustomization(product);
+                      setActiveTab('customize-artisan-item');
+                    }}
                     onBack={() => setActiveTab('find-artisans')}
                   />
+                )}
+
+                {activeTab === 'customize-artisan-item' && (
+                  <div className="pt-4">
+                    <button
+                      onClick={() => setActiveTab('artisan-storefront')}
+                      className="mb-6 inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-[#1F1510] hover:bg-[#261B15] text-slate-200 hover:text-white border border-[#3E2E24] text-xs font-extrabold transition-all shadow-md group"
+                    >
+                      <span>← Back to Workshop</span>
+                    </button>
+                    <ArtisanProduct3DEditor 
+                      artisan={selectedArtisan} 
+                      product={selectedProductForCustomization}
+                    />
+                  </div>
                 )}
 
                 {activeTab === 'milestone-tracker' && (

@@ -2,9 +2,16 @@ import React, { useState } from "react";
 import { Eye, Check, ShoppingBag, Sparkles, ShieldCheck } from "lucide-react";
 import { ThreeDProductViewer } from "./ThreeDProductViewer";
 import { MOCK_PRODUCTS } from "../data/mockData";
+import type { Artisan, Product } from "../types";
 
-export const ArtisanProduct3DEditor: React.FC = () => {
-  const basePrice = 32000;
+interface ArtisanProduct3DEditorProps {
+  artisan?: Artisan;
+  product?: Product | null;
+}
+
+export const ArtisanProduct3DEditor: React.FC<ArtisanProduct3DEditorProps> = ({ artisan, product }) => {
+  const basePrice = product ? product.price : 32000;
+  const productTitle = product ? product.title : "Bespoke Hand-Carved Dining Table";
   
   const [selectedWood, setSelectedWood] = useState({ name: "Sagwan Teak", priceDiff: 0 });
   const [capacity, setCapacity] = useState({ label: "6-Seater", priceDiff: 0 });
@@ -85,10 +92,10 @@ export const ArtisanProduct3DEditor: React.FC = () => {
           <div>
             <span className="text-[10px] uppercase font-bold text-[#EA580C]">Storefront Configurator</span>
             <h3 className="text-xl font-bold text-white mt-0.5 leading-snug">
-              Bespoke Hand-Carved Dining Table
+              {productTitle}
             </h3>
             <p className="text-xs text-slate-400 mb-4">
-              Artisan: <strong className="text-white">Master Lakshya Sharma</strong> (14+ Yrs Exp)
+              Artisan: <strong className="text-white">{artisan ? artisan.name : "Master Lakshya Sharma"}</strong> ({artisan ? artisan.experienceYears : "14"}+ Yrs Exp)
             </p>
 
             {/* 1️⃣ Wood Selection */}
@@ -205,6 +212,53 @@ export const ArtisanProduct3DEditor: React.FC = () => {
             </div>
           </div>
 
+          {/* DYNAMIC CONFIGURATION SUMMARY */}
+          <div className="bg-[#1A120E] border border-[#2A1E17] p-5 rounded-2xl space-y-3">
+            <h4 className="text-sm font-bold text-white mb-2 border-b border-[#2A1E17] pb-2">Configuration Summary</h4>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between text-slate-400">
+                <span>Base Item: {productTitle}</span>
+                <span className="font-mono text-white">₹{basePrice.toLocaleString("en-IN")}</span>
+              </div>
+              {selectedWood.priceDiff !== 0 && (
+                <div className="flex justify-between text-slate-400">
+                  <span>Wood Upgrade ({selectedWood.name})</span>
+                  <span className="text-[#EA580C] font-mono">+{selectedWood.priceDiff.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+              {capacity.priceDiff !== 0 && (
+                <div className="flex justify-between text-slate-400">
+                  <span>Size Upgrade ({capacity.label})</span>
+                  <span className="text-[#EA580C] font-mono">+{capacity.priceDiff.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+              {hasBrassInlay && (
+                <div className="flex justify-between text-slate-400">
+                  <span>Accent (Brass Inlay)</span>
+                  <span className="text-[#EA580C] font-mono">+2,500</span>
+                </div>
+              )}
+              {hasMOP && (
+                <div className="flex justify-between text-slate-400">
+                  <span>Accent (Mother of Pearl)</span>
+                  <span className="text-[#EA580C] font-mono">+3,800</span>
+                </div>
+              )}
+              {selectedPolish.priceDiff !== 0 && (
+                <div className="flex justify-between text-slate-400">
+                  <span>Polish ({selectedPolish.name})</span>
+                  <span className="text-[#EA580C] font-mono">+{selectedPolish.priceDiff.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+            </div>
+            <div className="pt-3 mt-3 border-t border-[#2A1E17]">
+              <textarea 
+                className="w-full bg-[#120B08] border border-[#2A1E17] rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#EA580C]" 
+                rows={3} 
+                placeholder="Add custom dimensions, specific carving requests, or notes for the artisan..."
+              ></textarea>
+            </div>
+          </div>
 
           {/* DYNAMIC TOTAL PRICE DISPLAY */}
           <div className="bg-[#1A120E] border border-[#EA580C] p-5 rounded-2xl space-y-3">
@@ -235,12 +289,12 @@ export const ArtisanProduct3DEditor: React.FC = () => {
               {isBooked ? (
                 <>
                   <Check className="w-4 h-4 animate-bounce" />
-                  <span>Booked Direct with Lakshya!</span>
+                  <span>Booked Direct with {artisan ? artisan.name.split(" ")[0] : "Lakshya"}!</span>
                 </>
               ) : (
                 <>
                   <ShoppingBag className="w-4 h-4" />
-                  <span>🛍️ Book Direct with Master Lakshya</span>
+                  <span>🛍️ Book Direct with {artisan ? artisan.name.split(" ")[0] : "Master Lakshya"}</span>
                 </>
               )}
             </button>
@@ -250,10 +304,43 @@ export const ArtisanProduct3DEditor: React.FC = () => {
 
       </div>
 
+      {/* ADDITIONAL CATEGORIES SECTION */}
+      <div className="mt-8 pt-8 border-t border-[#2A1E17]">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-bold text-white">Other Items by {artisan ? artisan.name.split(" ")[0] : "Lakshya"}</h3>
+          <div className="flex items-center gap-4">
+            <select className="bg-[#120B08] border border-[#2A1E17] text-xs text-slate-300 py-2 px-3 rounded-xl focus:outline-none focus:border-[#EA580C]">
+              <option>All Categories</option>
+              <option>Chairs</option>
+              <option>Tables</option>
+              <option>Beds</option>
+            </select>
+            <div className="relative">
+              <input type="text" placeholder="Search items..." className="bg-[#120B08] border border-[#2A1E17] text-xs text-white pl-8 pr-3 py-2 rounded-xl focus:outline-none focus:border-[#EA580C]" />
+              <svg className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {["Chairs", "Dining Tables", "Sofas", "Cabinets"].map((cat, i) => (
+            <div key={cat} className="group cursor-pointer">
+              <div className="bg-[#1F1510] border border-[#2A1E17] rounded-2xl overflow-hidden aspect-square relative mb-2 group-hover:border-[#EA580C] transition-colors">
+                <img src={`https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80&w=400&h=400&sig=${i}`} alt={cat} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-60 group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-white font-extrabold text-sm tracking-wider drop-shadow-lg">{cat}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Fullscreen 3D Viewport Modal */}
       {is3DFullscreenOpen && (
         <ThreeDProductViewer
-          product={MOCK_PRODUCTS[0]}
+          product={product || MOCK_PRODUCTS[0]}
           onClose={() => setIs3DFullscreenOpen(false)}
         />
       )}

@@ -91,7 +91,7 @@ const MapFlyToController: React.FC<{ center: [number, number]; zoom: number }> =
 
 interface FindLocalArtisansPageProps {
   onBackToHome?: () => void;
-  onSelectArtisanStorefront?: (artisanName: string) => void;
+  onSelectArtisanStorefront?: (artisan: RegionalArtisan) => void;
 }
 
 export const FindLocalArtisansPage: React.FC<FindLocalArtisansPageProps> = ({
@@ -819,7 +819,7 @@ export const FindLocalArtisansPage: React.FC<FindLocalArtisansPageProps> = ({
                   type="button"
                   onClick={() => {
                     if (onSelectArtisanStorefront) {
-                      onSelectArtisanStorefront(selectedArtisanForModal.name);
+                      onSelectArtisanStorefront(selectedArtisanForModal);
                     }
                     setSelectedArtisanForModal(null);
                   }}

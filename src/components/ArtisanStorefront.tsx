@@ -3,17 +3,18 @@ import type { Artisan, Product } from '../types';
 import { MOCK_ARTISANS, MOCK_PRODUCTS } from '../data/mockData';
 import { Star, ShieldCheck, MapPin, Play, Eye, Search, Hammer, Sparkles, ArrowLeft } from 'lucide-react';
 import { ThreeDProductViewer } from './ThreeDProductViewer';
-import { ArtisanProduct3DEditor } from './ArtisanProduct3DEditor';
 
 interface ArtisanStorefrontProps {
   artisan?: Artisan;
   onOpenReel: (artisan: Artisan) => void;
+  onCustomizeProduct?: (product: Product) => void;
   onBack?: () => void;
 }
 
 export const ArtisanStorefront: React.FC<ArtisanStorefrontProps> = ({
   artisan = MOCK_ARTISANS[0],
   onOpenReel,
+  onCustomizeProduct,
   onBack,
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -110,10 +111,7 @@ export const ArtisanStorefront: React.FC<ArtisanStorefrontProps> = ({
         </div>
       </section>
 
-      {/* 2. SECTION B: ARTISAN STOREFRONT 3D PRODUCT EDITOR */}
-      <section id="storefront-3d-editor">
-        <ArtisanProduct3DEditor />
-      </section>
+      {/* Removed embedded ArtisanProduct3DEditor */}
 
       {/* 3. In-Store Product Catalog */}
       <section className="space-y-6">
@@ -199,13 +197,22 @@ export const ArtisanStorefront: React.FC<ArtisanStorefrontProps> = ({
                   <span className="text-lg font-extrabold text-white">₹{product.price.toLocaleString('en-IN')}</span>
                 </div>
 
-                <button
-                  onClick={() => setSelectedProduct(product)}
-                  className="px-4 py-2.5 rounded-xl bg-[#120B08] hover:bg-[#261B15] text-[#EA580C] hover:text-white text-xs font-bold border border-[#EA580C]/40 transition-colors flex items-center space-x-1"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Inspect 3D</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => onCustomizeProduct && onCustomizeProduct(product)}
+                    className="px-4 py-2.5 rounded-xl bg-[#EA580C] hover:bg-[#F97316] text-white text-xs font-bold transition-colors flex items-center space-x-1 shadow-md"
+                  >
+                    <Hammer className="w-3.5 h-3.5" />
+                    <span>Customize</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectedProduct(product)}
+                    className="px-4 py-2.5 rounded-xl bg-[#120B08] hover:bg-[#261B15] text-[#EA580C] hover:text-white text-xs font-bold border border-[#EA580C]/40 transition-colors flex items-center space-x-1"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Inspect 3D</span>
+                  </button>
+                </div>
               </div>
 
             </div>
