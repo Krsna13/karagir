@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import type { ItemMaterialSlot } from '../data/materialRates';
+import { calculateAdjustedPrice as calculatePriceService } from '../services/pricingService';
 
 interface MaterialContextType {
   selectedMaterialFilters: string[];
@@ -54,19 +55,7 @@ export const MaterialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const calculateAdjustedPrice = (basePrice: number): number => {
-    let price = basePrice;
-    
-    if (selectedPrimaryMaterial.includes('Sheesham')) price -= 3500;
-    else if (selectedPrimaryMaterial.includes('Mango')) price -= 7000;
-    else if (selectedPrimaryMaterial.includes('Walnut')) price += 5000;
-    else if (selectedPrimaryMaterial.includes('Brass')) price += 2500;
-
-    if (selectedAccentMaterials.includes('Solid Brass Wire / Sheet Inlay')) price += 1800;
-    if (selectedAccentMaterials.includes('Mother of Pearl / Bone Tiles')) price += 2500;
-    if (selectedAccentMaterials.includes('Hand-Carved Wooden Jali Panels')) price += 1200;
-    if (selectedAccentMaterials.includes('22K Gold Leafing (Vark) Accents')) price += 3000;
-
-    return Math.max(1000, price);
+    return calculatePriceService(basePrice, selectedPrimaryMaterial, selectedAccentMaterials);
   };
 
   const toggleSlot = (slot: ItemMaterialSlot) => {

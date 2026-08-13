@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { Search, LayoutGrid, List, Play, Star, ShieldCheck, MapPin, Hammer, ArrowRight, Sparkles, User, Store, RotateCcw } from 'lucide-react';
 import type { Artisan, CategoryType, LocationPin } from '../types';
 import { MOCK_ARTISANS } from '../data/mockData';
+import { useKaragirStore } from '../context/KaragirStoreContext';
+import { convertStoreToArtisan } from '../utils/artisanConverter';
 import { LeafletMap } from './LeafletMap';
+import { CategorySection } from './CategorySection';
 
 interface BuyerDiscoveryProps {
   selectedLocation: LocationPin;
@@ -36,8 +39,13 @@ export const BuyerDiscovery: React.FC<BuyerDiscoveryProps> = ({
     { id: 'cane', label: '#AssamCane' }
   ];
 
+  const { allStores } = useKaragirStore();
+
+  const dynamicArtisans = Object.values(allStores || {}).map((store, idx) => convertStoreToArtisan(store, idx));
+  const allArtisans = [...MOCK_ARTISANS, ...dynamicArtisans];
+
   // Filter artisans based on location, artisan search query, category, material tag, and rating
-  const filteredArtisans = MOCK_ARTISANS.filter((artisan) => {
+  const filteredArtisans = allArtisans.filter((artisan) => {
     const queryLower = searchQuery.toLowerCase();
     
     // Search by Artisan Name, Workshop / Shop Name, Locality, Pincode, or Specialty
@@ -171,14 +179,14 @@ export const BuyerDiscovery: React.FC<BuyerDiscoveryProps> = ({
           <div className="lg:col-span-5">
             <div className="relative group rounded-3xl overflow-hidden border border-[#3E2E24] shadow-2xl bg-[#1F1510]">
               <img
-                src={MOCK_ARTISANS[0].coverUrl}
+                src={allArtisans[0]?.coverUrl}
                 alt="Master Craftsmanship"
                 className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-700 opacity-80"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#120B08] via-black/40 to-transparent"></div>
               
               <button
-                onClick={() => onOpenReel(MOCK_ARTISANS[0])}
+                onClick={() => onOpenReel(allArtisans[0])}
                 className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-[#EA580C]/90 hover:bg-[#EA580C] text-white flex items-center justify-center shadow-2xl transition-all hover:scale-110 glow-orange"
               >
                 <Play className="w-7 h-7 fill-current ml-1" />
@@ -199,6 +207,15 @@ export const BuyerDiscovery: React.FC<BuyerDiscoveryProps> = ({
 
         </div>
       </section>
+
+      {/* NEW: Category Discovery Section */}
+      <div className="bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <CategorySection onCategoryClick={(cat) => {
+          setSearchQuery(cat.name);
+          const element = document.getElementById('search-discovery-block');
+          element?.scrollIntoView({ behavior: 'smooth' });
+        }} />
+      </div>
 
       {/* 2. DISCOVERY & SEARCH BLOCK */}
       <section id="search-discovery-block" className="space-y-6">
@@ -265,10 +282,10 @@ export const BuyerDiscovery: React.FC<BuyerDiscoveryProps> = ({
                     : 'bg-[#120B08] text-slate-400 border border-[#2A1E17] hover:text-white'
                 }`}
               >
-                All Workshops ({MOCK_ARTISANS.length})
+                All Workshops ({allArtisans.length})
               </button>
 
-              {MOCK_ARTISANS.map((artisan) => {
+              {allArtisans.map((artisan) => {
                 const isSelected = selectedArtisanPill === artisan.name;
                 return (
                   <button

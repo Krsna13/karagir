@@ -49,6 +49,7 @@ export const CustomerCampaignLauncher: React.FC = () => {
 
   // 🖼️ Image-to-3D Model Generation State
   const [image3DNotice, setImage3DNotice] = useState<string | null>(null);
+  const [, setIsImage3DGenerating] = useState(false);
 
   // Section 3: Material & Accent Customization State
   const { selectedSlots, setSelectedSlots, removeSlot, setPrimaryMaterial, setFinish } = useMaterial();
@@ -739,7 +740,90 @@ export const CustomerCampaignLauncher: React.FC = () => {
               )}
             </div>
 
+          
+{/* 4️⃣ SUBCATEGORIES & MATERIAL BLUEPRINT FOR SELECTED ITEM */}
+          {selectedProduct.subcategories && selectedProduct.subcategories.length > 0 && (
+            <div className="space-y-4 bg-[#120B08] p-4 sm:p-5 rounded-2xl border border-[#EA580C]/40">
+              <div className="flex items-center justify-between border-b border-[#2A1E17] pb-2.5">
+                <span className="text-xs font-extrabold text-[#EA580C] uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-[#EA580C]" />
+                  <span>{selectedProduct.name} Subcategories & Materials Blueprint</span>
+                </span>
+                <span className="text-[10px] font-mono text-[#EAB308] bg-[#EA580C]/10 px-2 py-0.5 rounded border border-[#EA580C]/30 font-bold">
+                  {selectedProduct.subcategories.length} Subcategory Specs
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {selectedProduct.subcategories.map((subcat) => (
+                  <div key={subcat.id} className="bg-[#1F1510] p-3.5 rounded-xl border border-[#2A1E17] space-y-2">
+                    <span className="text-xs font-bold text-amber-300 block border-b border-[#2A1E17] pb-1 font-mono">
+                      📐 {subcat.name}
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {subcat.materials.map((mat) => {
+                        const isSelectedMat = primaryMaterial.name.toLowerCase().includes(mat.toLowerCase()) || aiDescription.toLowerCase().includes(mat.toLowerCase());
+                        return (
+                          <button
+                            key={mat}
+                            type="button"
+                            onClick={() => handleToggleChip(mat, mat.toLowerCase().slice(0, 5))}
+                            className={`text-[10px] font-medium px-2.5 py-1 rounded-lg border transition-all ${isSelectedMat
+                                ? "bg-[#EA580C] text-white border-[#EA580C] font-bold shadow"
+                                : "bg-[#120B08] text-slate-300 border-[#2A1E17] hover:border-[#EA580C] hover:text-white"
+                              }`}
+                            title={`Click to add/remove "${mat}" in AI specification`}
+                          >
+                            {mat}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 4️⃣ PRIMARY STRUCTURAL MATERIAL */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
+                4️⃣ Primary Structural Material:
+              </label>
+              <span className="text-[10px] text-[#EAB308] font-mono font-bold bg-[#120B08] px-2.5 py-0.5 rounded border border-[#EAB308]/30">
+                Rates Synced to {dimensionUnit.toUpperCase()}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {PRIMARY_MATERIALS.map((m) => {
+                const isSelected = primaryMaterial.id === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setPrimaryMaterial(m.name)}
+                    className={`text-left p-3.5 rounded-2xl border text-xs transition-all duration-300 ${isSelected
+                        ? "border-[#EA580C] bg-[#EA580C]/20 text-white font-semibold shadow-lg glow-orange"
+                        : "border-[#2A1E17] bg-[#120B08] text-slate-400 hover:border-[#3E2E24] hover:text-white"
+                      }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-white text-sm">{m.name}</span>
+                      <span className="text-[11px] font-mono text-[#EAB308] bg-[#120B08] px-2.5 py-1 rounded-md border border-[#EAB308]/40 font-bold">
+                        {getConvertedMaterialRateText(m.ratePerCubicFt, dimensionUnit)}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 mt-1.5 line-clamp-1">{m.description}</p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          
+</div>
         {/* PANEL 1: 3D ITEM INSPECTOR CANVAS (CENTER - 4 COLS) */}
         <div className="lg:col-span-4 space-y-4">
 
@@ -782,7 +866,7 @@ export const CustomerCampaignLauncher: React.FC = () => {
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: woodToneColorHex }}></span>
                 <span>Mat: {hasBrassPillars ? 'Moradabad Cast Brass' : (hasMarbleTop ? 'Makrana Marble' : activeMaterialSpec.badgeMatName)}</span>
               </span>
-              <span className="font-mono px-2.5 py-1 rounded-md bg-[#120B08] text-emerald-400 border border-[#2A1E17] font-semibold">
+                <span className="font-mono px-2.5 py-1 rounded-md bg-[#120B08] text-emerald-400 border border-[#2A1E17] font-semibold">
                 Polish: {lowerAiText.includes('beeswax') ? 'Organic Beeswax & Linseed Oil' : activeMaterialSpec.badgePolishName}
               </span>
             </div>
@@ -799,6 +883,156 @@ export const CustomerCampaignLauncher: React.FC = () => {
             <Eye className="w-4 h-4" />
             <span>Launch Fullscreen 3D Viewport Inspector</span>
           </button>
+
+          {/* 5️⃣ SECONDARY ACCENT INLAYS (MULTI-SELECT) */}
+          <div className="space-y-2.5">
+            <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
+              5️⃣ Secondary Accent Inlays (Select Multiple):
+            </label>
+            <div className="space-y-2">
+              {SECONDARY_ACCENTS.map((acc) => {
+                const isSelected = selectedAccents.includes(acc.id);
+                return (
+                  <label
+                    key={acc.id}
+                    className={`flex items-center justify-between p-3.5 rounded-2xl text-xs cursor-pointer border transition-all ${isSelected
+                        ? "bg-[#EA580C]/20 border-[#EA580C] text-white font-semibold shadow-md"
+                        : "bg-[#120B08] border-[#2A1E17] text-slate-400 hover:border-[#3E2E24] hover:text-slate-200"
+                      }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleAccent(acc.id)}
+                        className="accent-[#EA580C] w-4 h-4 rounded cursor-pointer"
+                      />
+                      <span className="text-slate-200 font-medium text-xs sm:text-sm">{acc.name}</span>
+                    </div>
+                    <span className="text-[#EA580C] font-mono font-extrabold text-xs bg-[#120B08] px-2.5 py-0.5 rounded-md border border-[#EA580C]/30">
+                      +₹{acc.flatCost.toLocaleString('en-IN')}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 📊 ESTIMATED MARKET PRICE RANGE CALCULATOR PANEL */}
+          <div className="bg-[#1A120E] border-2 border-[#EA580C] p-6 sm:p-7 rounded-3xl space-y-5 shadow-2xl mt-6">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Estimated Market Price Range
+              </span>
+              <span className="text-xs text-emerald-400 font-mono font-bold bg-emerald-950 px-3 py-1 rounded-full border border-emerald-800">
+                {parsedLength} × {parsedWidth} × {parsedHeight} {dimensionUnit}
+              </span>
+            </div>
+
+            <div className="text-3xl sm:text-4xl font-extrabold text-[#EAB308] font-mono glow-orange">
+              ₹{rangeMin.toLocaleString("en-IN")} – ₹{rangeMax.toLocaleString("en-IN")}
+            </div>
+
+            <div className="text-xs text-slate-300">
+              Calculated Area Average: <span className="text-white font-extrabold font-mono text-base">₹{Math.round(calculatedAverage).toLocaleString("en-IN")}.00</span>
+            </div>
+            
+            {/* ⚡ ACTIVE MATERIALS COST BREAKDOWN */}
+            <div className="mt-6 pt-5 border-t border-[#3E2E24] space-y-3">
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-[#EA580C] animate-pulse"></span>
+                <span className="text-xs font-extrabold text-[#EA580C] uppercase tracking-wider block">
+                  Added Materials & Features Breakdown:
+                </span>
+              </div>
+              
+              <div className="space-y-2.5 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                {breakdown.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-[#120B08] p-2.5 rounded-xl border border-[#2A1E17] hover:border-[#EA580C]/50 transition-colors">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-white font-bold">{item.materialName}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{item.role} • {item.quantity} {item.unit}</span>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <span className="text-xs text-[#EAB308] font-mono font-bold">₹{Math.round(item.lineAvg).toLocaleString('en-IN')}</span>
+                      <button
+                        onClick={() => {
+                          const matchingSlot = selectedSlots.find(s => s.role === item.role && (s.rateKey.includes(item.materialName.toLowerCase().split(' ')[0]) || s.rateKey === item.materialName) || s.role === item.role);
+                          if (matchingSlot) removeSlot(matchingSlot.role, matchingSlot.rateKey);
+                        }}
+                        className="w-7 h-7 rounded-lg bg-red-950/30 text-red-400 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all border border-red-900/30"
+                        title="Remove from 3D Model"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#3E2E24]">
+              <div>
+                <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5">Craftsmanship Grade:</label>
+                <select className="w-full bg-[#120B08] border border-[#3E2E24] text-white font-semibold rounded-2xl p-3 text-xs" value={selectedGrade.id} onChange={(e) => setSelectedGrade(CRAFTSMANSHIP_GRADES.find((g) => g.id === e.target.value) || CRAFTSMANSHIP_GRADES[1])}>
+                  {CRAFTSMANSHIP_GRADES.map((g) => (
+                    <option key={g.id} value={g.id}>{g.label} ({g.experienceTag}) — {g.multiplier}x</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5">Target Delivery Locality:</label>
+                <select className="w-full bg-[#120B08] border border-[#3E2E24] text-white font-semibold rounded-2xl p-3 text-xs" value={selectedLocality.pincode} onChange={(e) => setSelectedLocality(LOCALITIES.find((l) => l.pincode === e.target.value) || LOCALITIES[0])}>
+                  <optgroup label="Mumbai">
+                    {LOCALITIES.filter(l => l.city === 'Mumbai').map((l) => (
+                      <option key={l.pincode} value={l.pincode}>{l.name} ({l.pincode}) — Factor {l.costFactor}x</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Pune">
+                    {LOCALITIES.filter(l => l.city === 'Pune').map((l) => (
+                      <option key={l.pincode} value={l.pincode}>{l.name} ({l.pincode}) — Factor {l.costFactor}x</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Nashik">
+                    {LOCALITIES.filter(l => l.city === 'Nashik').map((l) => (
+                      <option key={l.pincode} value={l.pincode}>{l.name} ({l.pincode}) — Factor {l.costFactor}x</option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+
+            {/* ⚠️ DISCLAIMER ALERT BANNER */}
+            <div className="bg-[#EA580C]/15 border border-[#EA580C]/50 p-4 rounded-2xl flex items-start gap-3.5 shadow-md">
+              <AlertTriangle className="w-5 h-5 text-[#EA580C] shrink-0 mt-0.5" />
+              <p className="text-[11px] text-slate-200 leading-relaxed">
+                <strong className="text-[#EA580C] font-bold">Market Estimation Disclaimer:</strong> This price range is calculated based on regional material benchmarks. Proposals by local artisans will reflect workshop overheads and handcrafting techniques.
+              </p>
+            </div>
+
+            {/* CTA Broadcast Button */}
+            <button
+              id="broadcast-btn"
+              onClick={handleBroadcast}
+              disabled={isBroadcasted}
+              className={`w-full py-4 rounded-2xl text-sm font-bold text-white transition-all shadow-2xl flex items-center justify-center space-x-2 ${isBroadcasted
+                  ? "bg-emerald-600 cursor-not-allowed"
+                  : "bg-[#EA580C] hover:bg-[#C2410C] glow-orange"
+                }`}
+            >
+              {isBroadcasted ? (
+                <>
+                  <Check className="w-5 h-5 animate-bounce" />
+                  <span>Broadcasted to {selectedLocality.name} Karagirs!</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5" />
+                  <span>🚀 Broadcast Custom Campaign</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* PANEL 2: ✨ AI PROMPT TEXT EDITOR & LIVE TECHNICAL SPEC SHEET (RIGHT - 4 COLS) */}
@@ -977,137 +1211,8 @@ export const CustomerCampaignLauncher: React.FC = () => {
                 </p>
               </div>
             </div>
-
-
           </div>
-        </div>
-        </div>
-
-      </div>
-
-      {/* ========================================================================= */}
-      {/* FORM SPECIFICATIONS & DYNAMIC PRICE ESTIMATOR GRID (7 COLS / 5 COLS) */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-        {/* LEFT COLUMN: MATERIAL, FINISH & CRAFTSMANSHIP SPECIFICATION BUILDER (7 COLS) */}
-        <div className="lg:col-span-7 bg-gradient-to-b from-[#1F1510] to-[#120B08] p-6 sm:p-8 rounded-3xl border border-[#3E2E24] shadow-2xl space-y-7">
-
-          {/* 4️⃣ SUBCATEGORIES & MATERIAL BLUEPRINT FOR SELECTED ITEM */}
-          {selectedProduct.subcategories && selectedProduct.subcategories.length > 0 && (
-            <div className="space-y-4 bg-[#120B08] p-4 sm:p-5 rounded-2xl border border-[#EA580C]/40">
-              <div className="flex items-center justify-between border-b border-[#2A1E17] pb-2.5">
-                <span className="text-xs font-extrabold text-[#EA580C] uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-[#EA580C]" />
-                  <span>{selectedProduct.name} Subcategories & Materials Blueprint</span>
-                </span>
-                <span className="text-[10px] font-mono text-[#EAB308] bg-[#EA580C]/10 px-2 py-0.5 rounded border border-[#EA580C]/30 font-bold">
-                  {selectedProduct.subcategories.length} Subcategory Specs
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {selectedProduct.subcategories.map((subcat) => (
-                  <div key={subcat.id} className="bg-[#1F1510] p-3.5 rounded-xl border border-[#2A1E17] space-y-2">
-                    <span className="text-xs font-bold text-amber-300 block border-b border-[#2A1E17] pb-1 font-mono">
-                      📐 {subcat.name}
-                    </span>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {subcat.materials.map((mat) => {
-                        const isSelectedMat = primaryMaterial.name.toLowerCase().includes(mat.toLowerCase()) || aiDescription.toLowerCase().includes(mat.toLowerCase());
-                        return (
-                          <button
-                            key={mat}
-                            type="button"
-                            onClick={() => handleToggleChip(mat, mat.toLowerCase().slice(0, 5))}
-                            className={`text-[10px] font-medium px-2.5 py-1 rounded-lg border transition-all ${isSelectedMat
-                                ? "bg-[#EA580C] text-white border-[#EA580C] font-bold shadow"
-                                : "bg-[#120B08] text-slate-300 border-[#2A1E17] hover:border-[#EA580C] hover:text-white"
-                              }`}
-                            title={`Click to add/remove "${mat}" in AI specification`}
-                          >
-                            {mat}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 4️⃣ PRIMARY STRUCTURAL MATERIAL */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
-                4️⃣ Primary Structural Material:
-              </label>
-              <span className="text-[10px] text-[#EAB308] font-mono font-bold bg-[#120B08] px-2.5 py-0.5 rounded border border-[#EAB308]/30">
-                Rates Synced to {dimensionUnit.toUpperCase()}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {PRIMARY_MATERIALS.map((m) => {
-                const isSelected = primaryMaterial.id === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setPrimaryMaterial(m.name)}
-                    className={`text-left p-3.5 rounded-2xl border text-xs transition-all duration-300 ${isSelected
-                        ? "border-[#EA580C] bg-[#EA580C]/20 text-white font-semibold shadow-lg glow-orange"
-                        : "border-[#2A1E17] bg-[#120B08] text-slate-400 hover:border-[#3E2E24] hover:text-white"
-                      }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-white text-sm">{m.name}</span>
-                      <span className="text-[11px] font-mono text-[#EAB308] bg-[#120B08] px-2.5 py-1 rounded-md border border-[#EAB308]/40 font-bold">
-                        {getConvertedMaterialRateText(m.ratePerCubicFt, dimensionUnit)}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 mt-1.5 line-clamp-1">{m.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 5️⃣ SECONDARY ACCENT INLAYS (MULTI-SELECT) */}
-          <div className="space-y-2.5">
-            <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
-              5️⃣ Secondary Accent Inlays (Select Multiple):
-            </label>
-            <div className="space-y-2">
-              {SECONDARY_ACCENTS.map((acc) => {
-                const isSelected = selectedAccents.includes(acc.id);
-                return (
-                  <label
-                    key={acc.id}
-                    className={`flex items-center justify-between p-3.5 rounded-2xl text-xs cursor-pointer border transition-all ${isSelected
-                        ? "bg-[#EA580C]/20 border-[#EA580C] text-white font-semibold shadow-md"
-                        : "bg-[#120B08] border-[#2A1E17] text-slate-400 hover:border-[#3E2E24] hover:text-slate-200"
-                      }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleAccent(acc.id)}
-                        className="accent-[#EA580C] w-4 h-4 rounded cursor-pointer"
-                      />
-                      <span className="text-slate-200 font-medium text-xs sm:text-sm">{acc.name}</span>
-                    </div>
-                    <span className="text-[#EA580C] font-mono font-extrabold text-xs bg-[#120B08] px-2.5 py-0.5 rounded-md border border-[#EA580C]/30">
-                      +₹{acc.flatCost.toLocaleString('en-IN')}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
+          
           {/* 6️⃣ SURFACE FINISH / POLISH */}
           <div className="space-y-2.5">
             <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
@@ -1137,143 +1242,9 @@ export const CustomerCampaignLauncher: React.FC = () => {
               })}
             </div>
           </div>
-
-          {/* 7️⃣ CRAFTSMANSHIP GRADE & LOCALITY */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5">
-                Craftsmanship Grade:
-              </label>
-              <select
-                className="w-full bg-[#120B08] border border-[#3E2E24] text-white font-semibold rounded-2xl p-3 text-xs focus:outline-none focus:border-[#EA580C] shadow-inner"
-                value={selectedGrade.id}
-                onChange={(e) => setSelectedGrade(CRAFTSMANSHIP_GRADES.find((g) => g.id === e.target.value) || CRAFTSMANSHIP_GRADES[1])}
-              >
-                {CRAFTSMANSHIP_GRADES.map((g) => (
-                  <option key={g.id} value={g.id}>{g.label} ({g.experienceTag}) — {g.multiplier}x</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5">
-                Target Delivery Locality:
-              </label>
-              <select
-                className="w-full bg-[#120B08] border border-[#3E2E24] text-white font-semibold rounded-2xl p-3 text-xs focus:outline-none focus:border-[#EA580C] shadow-inner"
-                value={selectedLocality.pincode}
-                onChange={(e) => setSelectedLocality(LOCALITIES.find((l) => l.pincode === e.target.value) || LOCALITIES[0])}
-              >
-                {LOCALITIES.map((l) => (
-                  <option key={l.pincode} value={l.pincode}>{l.name} ({l.pincode}) — Factor {l.costFactor}x</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
         </div>
-
-        {/* RIGHT COLUMN: STICKY DYNAMIC PRICE ESTIMATOR RESULT & BROADCAST CTA (5 COLS) */}
-        <div className="lg:col-span-5 lg:sticky lg:top-6 space-y-6">
-
-          {/* 📊 DYNAMIC ESTIMATED PRICE CALCULATOR RESULT PANEL */}
-          <div className="bg-[#1A120E] border-2 border-[#EA580C] p-6 sm:p-7 rounded-3xl space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                Estimated Market Price Range
-              </span>
-              <span className="text-xs text-emerald-400 font-mono font-bold bg-emerald-950 px-3 py-1 rounded-full border border-emerald-800">
-                {parsedLength} × {parsedWidth} × {parsedHeight} {dimensionUnit}
-              </span>
-            </div>
-
-            {uploadedPhotoUrl ? (
-              <div className="flex flex-col items-center justify-center py-6 text-center space-y-3">
-                <span className="text-4xl">🤝</span>
-                <h4 className="text-lg font-bold text-[#EA580C]">Custom Design Uploaded</h4>
-                <p className="text-sm text-slate-300">
-                  Since a custom reference photo was provided, the exact price will be discussed and finalized directly between you and the artisan.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="text-3xl sm:text-4xl font-extrabold text-[#EAB308] font-mono glow-orange">
-                  ₹{rangeMin.toLocaleString("en-IN")} – ₹{rangeMax.toLocaleString("en-IN")}
-                </div>
-
-                <div className="text-xs text-slate-300">
-                  Calculated Area Average: <span className="text-white font-extrabold font-mono text-base">₹{Math.round(calculatedAverage).toLocaleString("en-IN")}.00</span>
-                </div>
-              </>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#3E2E24]">
-              <div>
-                <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5">Craftsmanship Grade:</label>
-                <select className="w-full bg-[#120B08] border border-[#3E2E24] text-white font-semibold rounded-2xl p-3 text-xs" value={selectedGrade.id} onChange={(e) => setSelectedGrade(CRAFTSMANSHIP_GRADES.find((g) => g.id === e.target.value) || CRAFTSMANSHIP_GRADES[1])}>
-                  {CRAFTSMANSHIP_GRADES.map((g) => (
-                    <option key={g.id} value={g.id}>{g.label} ({g.experienceTag}) — {g.multiplier}x</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5">Target Delivery Locality:</label>
-                <select className="w-full bg-[#120B08] border border-[#3E2E24] text-white font-semibold rounded-2xl p-3 text-xs" value={selectedLocality.pincode} onChange={(e) => setSelectedLocality(LOCALITIES.find((l) => l.pincode === e.target.value) || LOCALITIES[0])}>
-                  <optgroup label="Mumbai">
-                    {LOCALITIES.filter(l => l.city === 'Mumbai').map((l) => (
-                      <option key={l.pincode} value={l.pincode}>{l.name} ({l.pincode}) — Factor {l.costFactor}x</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Pune">
-                    {LOCALITIES.filter(l => l.city === 'Pune').map((l) => (
-                      <option key={l.pincode} value={l.pincode}>{l.name} ({l.pincode}) — Factor {l.costFactor}x</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Nashik">
-                    {LOCALITIES.filter(l => l.city === 'Nashik').map((l) => (
-                      <option key={l.pincode} value={l.pincode}>{l.name} ({l.pincode}) — Factor {l.costFactor}x</option>
-                    ))}
-                  </optgroup>
-                </select>
-              </div>
-            </div>
-
-
-            {/* ⚠️ DISCLAIMER ALERT BANNER */}
-            <div className="bg-[#EA580C]/15 border border-[#EA580C]/50 p-4 rounded-2xl flex items-start gap-3.5 shadow-md">
-              <AlertTriangle className="w-5 h-5 text-[#EA580C] shrink-0 mt-0.5" />
-              <p className="text-[11px] text-slate-200 leading-relaxed">
-                <strong className="text-[#EA580C] font-bold">Market Estimation Disclaimer:</strong> This price range is calculated based on regional material benchmarks. Proposals by local artisans will reflect workshop overheads and handcrafting techniques.
-              </p>
-            </div>
-
-            {/* CTA Broadcast Button */}
-            <button
-              id="broadcast-btn"
-              onClick={handleBroadcast}
-              disabled={isBroadcasted}
-              className={`w-full py-4 rounded-2xl text-sm font-bold text-white transition-all shadow-2xl flex items-center justify-center space-x-2 ${isBroadcasted
-                  ? "bg-emerald-600 cursor-not-allowed"
-                  : "bg-[#EA580C] hover:bg-[#C2410C] glow-orange"
-                }`}
-            >
-              {isBroadcasted ? (
-                <>
-                  <Check className="w-5 h-5 animate-bounce" />
-                  <span>Broadcasted to {selectedLocality.name} Karagirs!</span>
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  <span>🚀 Broadcast Custom Campaign</span>
-                </>
-              )}
-            </button>
-          </div>
-
-        </div>
-
       </div>
+    </div>
 
       {/* Fullscreen 3D Viewport Inspection Modal */}
       {is3DFullscreenOpen && (
@@ -1282,7 +1253,7 @@ export const CustomerCampaignLauncher: React.FC = () => {
           onClose={() => setIs3DFullscreenOpen(false)}
         />
       )}
-
     </div>
   );
 };
+

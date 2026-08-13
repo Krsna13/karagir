@@ -2,13 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { MOCK_RADAR_REQUESTS } from '../data/mockData';
 import type { IncomingRequestRadar } from '../types';
 import { Radar, Upload, Check, Send, Plus, FolderKanban, MessageSquare, Wallet, Settings, Hammer, Sparkles, X, ArrowLeft } from 'lucide-react';
+import { KaragirProfileCard } from './KaragirProfileCard';
+import { useKaragirStore } from '../context/KaragirStoreContext';
+import { useEscrow } from '../context/EscrowContext';
+import { WorkshopProfileEditor } from './WorkshopProfileEditor';
+import { CatalogEditor } from './CatalogEditor';
+import { MilestoneTracker } from './MilestoneTracker';
+import { WithdrawModal } from './WithdrawModal';
 
 interface ArtisanPortalProps {
   onBackToBuyer?: () => void;
 }
 
 export const ArtisanPortal: React.FC<ArtisanPortalProps> = ({ onBackToBuyer }) => {
+  const { storeData, saveStoreProfile, addWorkItem } = useKaragirStore();
+  const { wallet } = useEscrow();
+  
+  const [activeSidebarTab, setActiveSidebarTab] = useState<'radar' | 'projects' | 'messages' | 'earnings' | 'profile' | 'catalog'>('radar');
   const [activeSubTab, setActiveSubTab] = useState<'Dashboard' | 'Directory' | 'Showcase'>('Dashboard');
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [hubTab, setHubTab] = useState<'radar' | 'enquiries'>('radar');
   const [quoteModalRequest, setQuoteModalRequest] = useState<IncomingRequestRadar | null>(null);
   const [quoteAmount, setQuoteAmount] = useState<number>(45000);
@@ -72,23 +84,39 @@ export const ArtisanPortal: React.FC<ArtisanPortalProps> = ({ onBackToBuyer }) =
 
         {/* Sidebar Nav Items */}
         <nav className="space-y-1.5">
-          <button className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl bg-[#EA580C] text-white text-xs font-bold shadow-md">
+          <button 
+            onClick={() => setActiveSidebarTab('radar')}
+            className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${activeSidebarTab === 'radar' ? 'bg-[#EA580C] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#261B15]'}`}>
             <Radar className="w-4 h-4" />
             <span>Opportunity Radar</span>
           </button>
-          <button className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-[#261B15] text-xs font-semibold transition-colors">
+          <button 
+            onClick={() => setActiveSidebarTab('projects')}
+            className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${activeSidebarTab === 'projects' ? 'bg-[#EA580C] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#261B15]'}`}>
             <FolderKanban className="w-4 h-4" />
             <span>Active Projects (4)</span>
           </button>
-          <button className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-[#261B15] text-xs font-semibold transition-colors">
+          <button 
+            onClick={() => setActiveSidebarTab('catalog')}
+            className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${activeSidebarTab === 'catalog' ? 'bg-[#EA580C] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#261B15]'}`}>
+            <Hammer className="w-4 h-4" />
+            <span>Catalog & Categories</span>
+          </button>
+          <button 
+            onClick={() => setActiveSidebarTab('messages')}
+            className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${activeSidebarTab === 'messages' ? 'bg-[#EA580C] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#261B15]'}`}>
             <MessageSquare className="w-4 h-4" />
             <span>Messages & Quotes</span>
           </button>
-          <button className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-[#261B15] text-xs font-semibold transition-colors">
+          <button 
+            onClick={() => setActiveSidebarTab('earnings')}
+            className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${activeSidebarTab === 'earnings' ? 'bg-[#EA580C] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#261B15]'}`}>
             <Wallet className="w-4 h-4" />
             <span>Earnings & Escrow</span>
           </button>
-          <button className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-[#261B15] text-xs font-semibold transition-colors">
+          <button 
+            onClick={() => setActiveSidebarTab('profile')}
+            className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${activeSidebarTab === 'profile' ? 'bg-[#EA580C] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-[#261B15]'}`}>
             <Settings className="w-4 h-4" />
             <span>Workshop Profile</span>
           </button>
@@ -103,38 +131,40 @@ export const ArtisanPortal: React.FC<ArtisanPortalProps> = ({ onBackToBuyer }) =
         </div>
       </aside>
 
-      {/* Main Content Area */}
+        {/* Main Content Area */}
       <main className="flex-1 space-y-8">
         
-        {/* 2. Top Sub-Header Tabs */}
-        <div className="bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-3 flex items-center justify-between shadow-xl">
-          <div className="flex items-center space-x-2">
-            {(['Dashboard', 'Directory', 'Showcase'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveSubTab(tab)}
-                className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
-                  activeSubTab === tab
-                    ? 'bg-[#EA580C] text-white shadow-md glow-orange'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+        {/* Opportunity Hub & Live Sync Grid (Dashboard) */}
+        {activeSidebarTab === 'radar' && activeSubTab === 'Dashboard' && (
+          <>
+            {/* 2. Top Sub-Header Tabs */}
+            <div className="bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-3 flex items-center justify-between shadow-xl mb-8">
+              <div className="flex items-center space-x-2">
+                {(['Dashboard', 'Directory', 'Showcase'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveSubTab(tab)}
+                    className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+                      activeSubTab === tab
+                        ? 'bg-[#EA580C] text-white shadow-md glow-orange'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
 
-          <div className="hidden sm:flex items-center space-x-2 text-xs text-slate-400 pr-3">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Workshop Live in Satpur MIDC</span>
-          </div>
-        </div>
+              <div className="hidden sm:flex items-center space-x-2 text-xs text-slate-400 pr-3">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Workshop Live in Satpur MIDC</span>
+              </div>
+            </div>
 
-        {/* Opportunity Hub & Live Sync Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* 3. Opportunity Hub Section (Left Column) */}
-          <div className="lg:col-span-7 bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-6 space-y-6 shadow-2xl">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              
+              {/* 3. Opportunity Hub Section (Left Column) */}
+              <div className="lg:col-span-7 bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-6 space-y-6 shadow-2xl">
             
             {/* Sub-Tabs: Direct Enquiries | Area Request Radar */}
             <div className="flex items-center justify-between border-b border-[#2A1E17] pb-4">
@@ -293,21 +323,61 @@ export const ArtisanPortal: React.FC<ArtisanPortalProps> = ({ onBackToBuyer }) =
 
               <div className="p-4 rounded-2xl bg-[#120B08] border border-[#2A1E17]">
                 <span className="text-xs text-slate-400">Available for Immediate Payout</span>
-                <p className="text-3xl font-extrabold text-[#EAB308] font-mono mt-1">
-                  ₹1,28,500.00
+                <p className="text-3xl font-extrabold text-[#EAB308] font-mono mt-1 transition-all">
+                  ₹{wallet.availableBalance.toLocaleString('en-IN')}
                 </p>
-                <p className="text-[10px] text-slate-500 mt-1">Pending Escrow Release: ₹42,500 (Project #99210)</p>
+                <p className="text-[10px] text-slate-500 mt-1">Pending Escrow Release: ₹{wallet.pendingEscrow.toLocaleString('en-IN')} (Project #KARAGIR-99210)</p>
               </div>
 
-              <button className="w-full py-2.5 rounded-xl bg-[#120B08] hover:bg-[#261B15] text-[#EAB308] text-xs font-bold border border-[#EAB308]/40 transition-colors flex items-center justify-center space-x-1.5">
+              <button 
+                onClick={() => setIsWithdrawModalOpen(true)}
+                disabled={wallet.availableBalance <= 0}
+                className={`w-full py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center space-x-1.5 ${
+                  wallet.availableBalance > 0
+                    ? 'bg-[#120B08] hover:bg-[#261B15] text-[#EAB308] border border-[#EAB308]/40'
+                    : 'bg-[#120B08] text-slate-500 border border-[#2A1E17] opacity-50 cursor-not-allowed'
+                }`}
+              >
                 <Wallet className="w-3.5 h-3.5" />
                 <span>Withdraw Funds to Bank</span>
               </button>
             </div>
 
-          </div>
+              </div>
+            </div>
+          </>
+        )}
 
-        </div>
+        {/* Public Storefront Showcase */}
+        {activeSidebarTab === 'radar' && activeSubTab === 'Showcase' && (
+          <div className="mt-8">
+            <KaragirProfileCard />
+          </div>
+        )}
+
+        {/* Directory Tab (Placeholder) */}
+        {activeSidebarTab === 'radar' && activeSubTab === 'Directory' && (
+          <div className="flex flex-col items-center justify-center p-12 bg-[#1F1510] border border-[#2A1E17] rounded-3xl shadow-2xl space-y-4">
+            <FolderKanban className="w-12 h-12 text-[#EA580C] opacity-50" />
+            <h2 className="text-xl font-bold text-white">Artisan Directory</h2>
+            <p className="text-sm text-slate-400">Discover other verified craftsmen in the Nashik region.</p>
+          </div>
+        )}
+
+        {/* Active Projects Tab */}
+        {activeSidebarTab === 'projects' && (
+          <MilestoneTracker isArtisanView={true} />
+        )}
+
+        {/* Workshop Profile Tab */}
+        {activeSidebarTab === 'profile' && (
+          <WorkshopProfileEditor storeData={storeData} saveStoreProfile={saveStoreProfile} />
+        )}
+
+        {/* Catalog & Categories Tab */}
+        {activeSidebarTab === 'catalog' && (
+          <CatalogEditor storeData={storeData} addWorkItem={addWorkItem} />
+        )}
 
       </main>
 
@@ -388,6 +458,10 @@ export const ArtisanPortal: React.FC<ArtisanPortalProps> = ({ onBackToBuyer }) =
         </div>
       )}
 
+      {/* Withdraw Modal */}
+      {isWithdrawModalOpen && (
+        <WithdrawModal onClose={() => setIsWithdrawModalOpen(false)} />
+      )}
     </div>
   );
 };

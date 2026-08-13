@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AppMode, LocationPin, Artisan, Product } from './types';
+import type { AppMode, LocationPin, Artisan, Product, ProductItem } from './types';
 import { NASHIK_LOCALITIES, MOCK_ARTISANS } from './data/mockData';
 import { Navbar } from './components/Navbar';
 import { BuyerDiscovery } from './components/BuyerDiscovery';
@@ -7,19 +7,26 @@ import { FindLocalArtisansPage } from './components/FindLocalArtisansPage';
 import { CustomRequestBuilder } from './components/CustomRequestBuilder';
 import { ArtisanStorefront } from './components/ArtisanStorefront';
 import { MilestoneTracker } from './components/MilestoneTracker';
+
 import { ArtisanPortal } from './components/ArtisanPortal';
 import { WorkshopReelModal } from './components/WorkshopReelModal';
 import { ArtisanProduct3DEditor } from './components/ArtisanProduct3DEditor';
 import { MaterialProvider } from './context/MaterialContext';
+import { KaragirStoreProvider } from './context/KaragirStoreContext';
+import { KaragirAuthModal } from './components/KaragirAuthModal';
+import { CreateStoreWizard } from './components/CreateStoreWizard';
+import { EscrowProvider } from './context/EscrowContext';
 import { Hammer, ShieldCheck, Heart, MapPin } from 'lucide-react';
 
-export function App() {
+function AppContent() {
   const [mode, setMode] = useState<AppMode>('buyer');
   const [activeTab, setActiveTab] = useState<string>('find-artisans');
   const [selectedLocation, setSelectedLocation] = useState<LocationPin>(NASHIK_LOCALITIES[0]);
   const [selectedArtisan, setSelectedArtisan] = useState<Artisan>(MOCK_ARTISANS[0]);
   const [activeReelArtisan, setActiveReelArtisan] = useState<Artisan | null>(null);
-  const [selectedProductForCustomization, setSelectedProductForCustomization] = useState<Product | null>(null);
+  const [selectedProductForCustomization, setSelectedProductForCustomization] = useState<Product | ProductItem | null>(null);
+
+
 
   const handleSelectArtisan = (artisan: Artisan) => {
     setSelectedArtisan(artisan);
@@ -138,13 +145,21 @@ export function App() {
             )}
 
             {mode === 'artisan' && (
-              <ArtisanPortal
-                onBackToBuyer={() => {
-                  setMode('buyer');
-                  setActiveTab('find-artisans');
-                }}
-              />
+              <>
+                {activeTab === 'artisan-portal' && (
+                  <ArtisanPortal
+                    onBackToBuyer={() => {
+                      setMode('buyer');
+                      setActiveTab('find-artisans');
+                    }}
+                  />
+                )}
+              </>
             )}
+
+            {/* Global Modals (Auth & Setup Wizards) */}
+            <KaragirAuthModal />
+            <CreateStoreWizard />
 
           </main>
         </div>
@@ -239,4 +254,15 @@ export function App() {
     </MaterialProvider>
   );
 }
+
+export function App() {
+  return (
+    <EscrowProvider>
+      <KaragirStoreProvider>
+        <AppContent />
+      </KaragirStoreProvider>
+    </EscrowProvider>
+  );
+}
+
 export default App;

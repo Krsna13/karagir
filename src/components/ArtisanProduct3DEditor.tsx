@@ -2,16 +2,16 @@ import React, { useState } from "react";
 import { Eye, Check, ShoppingBag, Sparkles, ShieldCheck } from "lucide-react";
 import { ThreeDProductViewer } from "./ThreeDProductViewer";
 import { MOCK_PRODUCTS } from "../data/mockData";
-import type { Artisan, Product } from "../types";
+import type { Artisan, Product, ProductItem } from "../types";
 
 interface ArtisanProduct3DEditorProps {
   artisan?: Artisan;
-  product?: Product | null;
+  product?: Product | ProductItem | null;
 }
 
 export const ArtisanProduct3DEditor: React.FC<ArtisanProduct3DEditorProps> = ({ artisan, product }) => {
-  const basePrice = product ? product.price : 32000;
-  const productTitle = product ? product.title : "Bespoke Hand-Carved Dining Table";
+  const basePrice = product ? ('price' in product ? product.price : product.startingPrice) : 32000;
+  const productTitle = product ? ('title' in product ? product.title : product.name) : "Bespoke Hand-Carved Dining Table";
   
   const [selectedWood, setSelectedWood] = useState({ name: "Sagwan Teak", priceDiff: 0 });
   const [capacity, setCapacity] = useState({ label: "6-Seater", priceDiff: 0 });
@@ -335,7 +335,7 @@ export const ArtisanProduct3DEditor: React.FC<ArtisanProduct3DEditorProps> = ({ 
       {/* Fullscreen 3D Viewport Modal */}
       {is3DFullscreenOpen && (
         <ThreeDProductViewer
-          product={product || MOCK_PRODUCTS[0]}
+          product={(product as unknown as Product) || MOCK_PRODUCTS[0]}
           onClose={() => setIs3DFullscreenOpen(false)}
         />
       )}

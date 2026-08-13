@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Hammer, MapPin, ChevronDown, ShieldCheck, Layers, Compass, Hammer as HammerIcon, CheckCircle2 } from 'lucide-react';
+import { useKaragirStore } from '../context/KaragirStoreContext';
 import type { AppMode, LocationPin } from '../types';
 import { NASHIK_LOCALITIES } from '../data/mockData';
 
@@ -23,6 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const [isHammerAnimating, setIsHammerAnimating] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { storeData, setIsAuthModalOpen } = useKaragirStore();
 
   const handleHammerClick = () => {
     setIsHammerAnimating(true);
@@ -35,6 +37,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const handleModeSwitch = (targetMode: AppMode) => {
+    if (targetMode === 'artisan' && !storeData) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    
     onModeChange(targetMode);
     if (targetMode === 'artisan') {
       onTabChange('artisan-portal');

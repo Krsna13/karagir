@@ -1,31 +1,50 @@
-import React from 'react';
-import { MOCK_MILESTONE } from '../data/mockData';
-import { Check, Hammer, Brush, Truck, ShieldCheck, Lock, MessageSquare, Clock, Camera, Sparkles, ArrowLeft } from 'lucide-react';
-
-import { useMaterial } from '../context/MaterialContext';
+import React, { useState } from 'react';
+import confetti from 'canvas-confetti';
+import { Check, Hammer, Truck, ShieldCheck, Lock, Clock, Camera, ArrowLeft, Upload } from 'lucide-react';
+import { useEscrow } from '../context/EscrowContext';
 
 interface MilestoneTrackerProps {
   onBack?: () => void;
+  isArtisanView?: boolean;
 }
 
-export const MilestoneTracker: React.FC<MilestoneTrackerProps> = ({ onBack }) => {
-  const order = MOCK_MILESTONE;
-  const { selectedPrimaryMaterial, selectedAccentMaterials, selectedFinish } = useMaterial();
+export const MilestoneTracker: React.FC<MilestoneTrackerProps> = ({ onBack, isArtisanView = false }) => {
+  const { order, submitMilestoneProof, approveMilestone } = useEscrow();
 
-  const renderIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'check':
-        return <Check className="w-4 h-4 stroke-[3]" />;
-      case 'hammer':
+  const [uploadingMilestoneId, setUploadingMilestoneId] = useState<string | null>(null);
+  const [photoUrlInput, setPhotoUrlInput] = useState('');
+
+  const renderIcon = (stageNumber: number) => {
+    switch (stageNumber) {
+      case 1:
+        return <Camera className="w-4 h-4" />;
+      case 2:
         return <Hammer className="w-4 h-4" />;
-      case 'brush':
-        return <Brush className="w-4 h-4" />;
-      case 'truck':
+      case 3:
         return <Truck className="w-4 h-4" />;
       default:
         return <Check className="w-4 h-4" />;
     }
   };
+
+  const handleApprove = (milestoneId: string) => {
+    approveMilestone(milestoneId);
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#EA580C', '#15803D', '#EAB308']
+    });
+  };
+
+  const handleSubmitProof = (milestoneId: string) => {
+    if (!photoUrlInput) return;
+    submitMilestoneProof(milestoneId, [photoUrlInput]);
+    setUploadingMilestoneId(null);
+    setPhotoUrlInput('');
+  };
+
+  const totalReleased = order.totalBudget - order.escrowVaultBalance;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-16">
@@ -53,48 +72,18 @@ export const MilestoneTracker: React.FC<MilestoneTrackerProps> = ({ onBack }) =>
             </span>
             <span className="text-xs font-semibold text-[#EAB308] bg-[#EAB308]/10 px-3 py-1 rounded-full border border-[#EAB308]/30 flex items-center">
               <Lock className="w-3 h-3 mr-1" />
-              {order.escrowStatus}
+              Locked in Escrow Vault
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">{order.projectTitle}</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">{order.productTitle}</h1>
           <p className="text-xs text-slate-400 mt-1">
-            Buyer: <span className="text-white font-semibold">{order.buyerName}</span> • Estimated Handover: <span className="text-emerald-400 font-semibold">{order.estimatedDeliveryDate}</span>
+            Buyer: <span className="text-white font-semibold">{order.buyerName}</span> • Artisan: <span className="text-white font-semibold">{order.artisanName}</span>
           </p>
         </div>
 
-        <button className="px-5 py-3 rounded-xl bg-[#EA580C] hover:bg-[#F97316] text-white text-xs font-bold transition-all shadow-lg glow-orange flex items-center space-x-2">
-          <MessageSquare className="w-4 h-4" />
-          <span>Artisan Chat & Direct Feed</span>
-        </button>
-      </div>
-
-      {/* 2. Locked Material Specifications Card */}
-      <div className="bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-6 shadow-2xl space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-[#EA580C]">
-            <Sparkles className="w-5 h-5" />
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white">Escrow-Locked Raw Material Specifications</h3>
-          </div>
-          <span className="text-xs text-emerald-400 font-mono bg-emerald-950 px-3 py-1 rounded-full border border-emerald-800">
-            Gate 1 Escrow Verified
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#120B08] p-4 rounded-2xl border border-[#2A1E17]">
-          <div>
-            <span className="text-[10px] text-slate-500 uppercase font-bold block">Primary Timber</span>
-            <span className="text-xs font-extrabold text-[#EA580C]">{selectedPrimaryMaterial}</span>
-          </div>
-          <div>
-            <span className="text-[10px] text-slate-500 uppercase font-bold block">Secondary Inlays</span>
-            <span className="text-xs font-bold text-white">
-              {selectedAccentMaterials.length > 0 ? selectedAccentMaterials.join(', ') : 'Solid Brass Wire Inlay'}
-            </span>
-          </div>
-          <div>
-            <span className="text-[10px] text-slate-500 uppercase font-bold block">Organic Polish</span>
-            <span className="text-xs font-bold text-slate-300">{selectedFinish}</span>
-          </div>
+        <div className="text-right flex-shrink-0">
+          <p className="text-xs text-slate-400 mb-1">Total Project Value</p>
+          <p className="text-3xl font-extrabold text-[#EAB308] font-mono tracking-tight">₹{order.totalBudget.toLocaleString('en-IN')}</p>
         </div>
       </div>
 
@@ -105,79 +94,127 @@ export const MilestoneTracker: React.FC<MilestoneTrackerProps> = ({ onBack }) =>
         <div className="lg:col-span-8 bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-6 sm:p-8 space-y-8 shadow-2xl">
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">Live Material Milestone Verification</h2>
-            <p className="text-xs text-slate-400 mt-1">Stage 1 requires artisan photo proof of seasoned raw timber planks & brass sheets before escrow release.</p>
+            <p className="text-xs text-slate-400 mt-1">Funds are released progressively as workshop stages are verified.</p>
           </div>
 
           <div className="relative pl-6 sm:pl-8 space-y-10 border-l-2 border-[#2A1E17]">
-            {order.steps.map((step) => {
-              const isCompleted = step.status === 'completed';
-              const isInProgress = step.status === 'in_progress';
+            {order.milestones.map((step) => {
+              const isInProgress = step.status === 'IN_PROGRESS';
+              const isProofSubmitted = step.status === 'PROOF_SUBMITTED';
+              const isApproved = step.status === 'APPROVED_AND_PAID';
 
               return (
                 <div key={step.id} className="relative group">
                   
+                  {/* Timeline Node Icon */}
                   <div
                     className={`absolute -left-[35px] sm:-left-[43px] top-0 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-                      isCompleted
-                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950/50'
-                        : isInProgress
-                        ? 'bg-[#EA580C] text-white shadow-lg glow-orange animate-pulse'
+                      isApproved ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950/50'
+                        : isInProgress ? 'bg-[#EA580C] text-white shadow-lg glow-orange animate-pulse'
+                        : isProofSubmitted ? 'bg-[#EAB308] text-[#120B08] shadow-lg glow-yellow'
                         : 'bg-[#120B08] text-slate-500 border border-[#2A1E17]'
                     }`}
                   >
-                    {renderIcon(step.iconName)}
+                    {isApproved ? <Check className="w-5 h-5 stroke-[3]" /> : renderIcon(step.stageNumber)}
                   </div>
 
-                  <div className="bg-[#120B08] border border-[#2A1E17] rounded-2xl p-5 space-y-3 shadow-md">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs font-mono font-bold text-slate-500">STEP 0{step.id}</span>
+                  <div className={`border rounded-2xl p-5 space-y-4 shadow-md transition-colors ${
+                    isApproved ? 'bg-[#120B08] border-emerald-900/40' 
+                    : isInProgress ? 'bg-[#1a120e] border-[#EA580C]/40'
+                    : isProofSubmitted ? 'bg-[#1a170e] border-[#EAB308]/40'
+                    : 'bg-[#120B08] border-[#2A1E17] opacity-60'
+                  }`}>
+                    {/* Header */}
+                    <div className="flex items-center justify-between border-b border-[#2A1E17]/60 pb-3">
+                      <div>
+                        <span className="text-[10px] font-mono font-bold text-[#EA580C] tracking-widest uppercase block mb-1">
+                          Stage {step.stageNumber} • {step.percentageSplit}% Tranche
+                        </span>
                         <h3 className="text-sm font-bold text-white">{step.title}</h3>
                       </div>
-                      
-                      {isCompleted && (
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950 px-2.5 py-0.5 rounded-full border border-emerald-800">
-                          MATERIAL GATE VERIFIED
+                      <div className="text-right">
+                        <span className="text-[10px] font-mono font-bold text-slate-400 block mb-1 uppercase tracking-widest">
+                          Payout
                         </span>
-                      )}
-                      {isInProgress && (
-                        <span className="text-[10px] font-bold text-[#EA580C] bg-[#EA580C]/10 px-2.5 py-0.5 rounded-full border border-[#EA580C]/40">
-                          IN PROGRESS
+                        <span className="text-sm font-extrabold text-white font-mono">
+                          ₹{step.grossAmount.toLocaleString('en-IN')}
                         </span>
-                      )}
-                      {!isCompleted && !isInProgress && (
-                        <span className="text-[10px] font-bold text-slate-500 bg-[#1F1510] px-2.5 py-0.5 rounded-full border border-[#2A1E17]">
-                          PENDING
-                        </span>
-                      )}
+                      </div>
                     </div>
 
                     <p className="text-xs text-slate-300 leading-relaxed">{step.description}</p>
 
-                    {step.timestamp && (
-                      <p className="text-[11px] text-slate-400 font-mono flex items-center">
-                        <Clock className="w-3 h-3 mr-1 text-[#EA580C]" />
-                        {step.timestamp}
-                      </p>
+                    {/* ARTISAN VIEW CONTROLS */}
+                    {isArtisanView && isInProgress && (
+                      <div className="pt-3 border-t border-[#2A1E17]/60">
+                        {uploadingMilestoneId === step.id ? (
+                          <div className="space-y-3">
+                            <input 
+                              type="url" 
+                              placeholder="Paste photo URL here..." 
+                              value={photoUrlInput}
+                              onChange={(e) => setPhotoUrlInput(e.target.value)}
+                              className="w-full px-4 py-2.5 rounded-xl bg-[#120B08] border border-[#2A1E17] text-white text-xs focus:outline-none focus:border-[#EA580C]"
+                            />
+                            <div className="flex space-x-3">
+                              <button onClick={() => setUploadingMilestoneId(null)} className="flex-1 py-2.5 rounded-xl border border-[#2A1E17] text-slate-400 text-xs font-bold hover:bg-[#261B15]">Cancel</button>
+                              <button onClick={() => handleSubmitProof(step.id)} className="flex-1 py-2.5 rounded-xl bg-[#EA580C] hover:bg-[#F97316] text-white text-xs font-bold shadow-lg">Submit Proof</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => setUploadingMilestoneId(step.id)}
+                            className="w-full py-2.5 rounded-xl bg-[#261B15] hover:bg-[#3E2E24] text-white text-xs font-bold border border-[#3E2E24] transition-all flex items-center justify-center space-x-2"
+                          >
+                            <Upload className="w-4 h-4 text-[#EA580C]" />
+                            <span>Upload Progress Photo Proof</span>
+                          </button>
+                        )}
+                      </div>
                     )}
 
-                    {step.photoUrl && (
-                      <div className="mt-3 rounded-xl overflow-hidden border border-[#2A1E17] relative group/photo">
-                        <img
-                          src={step.photoUrl}
-                          alt={step.title}
-                          className="w-full h-48 sm:h-56 object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90 p-3 flex items-end justify-between">
-                          <span className="text-[10px] text-slate-200 font-mono flex items-center">
-                            <Camera className="w-3 h-3 mr-1 text-emerald-400" />
-                            Raw Timber Planks Moisture & Grain Verification Uploaded
-                          </span>
-                        </div>
+                    {isArtisanView && isProofSubmitted && (
+                      <div className="pt-2 border-t border-[#2A1E17]/60">
+                         <span className="text-xs font-bold text-[#EAB308] flex items-center">
+                           <Clock className="w-4 h-4 mr-1.5" /> Pending Buyer Approval...
+                         </span>
+                      </div>
+                    )}
+
+                    {/* BUYER VIEW CONTROLS */}
+                    {!isArtisanView && (isInProgress || isProofSubmitted) && (
+                      <div className="pt-3 border-t border-[#2A1E17]/60">
+                        {isProofSubmitted && (
+                          <div className="bg-[#120B08] p-3 rounded-xl border border-[#EAB308]/30 mb-4">
+                            <p className="text-[11px] font-bold text-[#EAB308] uppercase tracking-wider mb-2">Artisan Submitted Proof</p>
+                            {step.proofImages.map((img, idx) => (
+                              <img key={idx} src={img} alt="Proof" className="w-full h-40 object-cover rounded-lg border border-[#2A1E17]" />
+                            ))}
+                            <p className="text-[10px] text-slate-400 font-mono mt-2 flex items-center">
+                              <Clock className="w-3 h-3 mr-1" /> Submitted at {step.submittedAt}
+                            </p>
+                          </div>
+                        )}
+                        <button 
+                          onClick={() => handleApprove(step.id)}
+                          className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-950/50 transition-all flex items-center justify-center space-x-2 glow-green"
+                        >
+                          <ShieldCheck className="w-4 h-4" />
+                          <span>Pay & Done (₹{step.grossAmount.toLocaleString('en-IN')})</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* SHARED: APPROVED STATE */}
+                    {isApproved && (
+                      <div className="pt-3 border-t border-[#2A1E17]/60 flex items-center justify-between">
+                         <span className="text-xs font-bold text-emerald-400 flex items-center">
+                           <Check className="w-4 h-4 mr-1.5" /> Stage Approved & Paid
+                         </span>
+                         <span className="text-[10px] text-slate-500 font-mono">{step.approvedAt}</span>
                       </div>
                     )}
                   </div>
-
                 </div>
               );
             })}
@@ -187,33 +224,6 @@ export const MilestoneTracker: React.FC<MilestoneTrackerProps> = ({ onBack }) =>
         {/* 4. Sidebar Detail Cards */}
         <div className="lg:col-span-4 space-y-6">
           
-          {/* Artisan Profile Card */}
-          <div className="bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-6 space-y-4 shadow-xl">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Assigned Master Artisan</h3>
-            <div className="flex items-center space-x-4">
-              <img
-                src={order.artisan.avatarUrl}
-                alt={order.artisan.name}
-                className="w-14 h-14 rounded-2xl object-cover border-2 border-[#EA580C]"
-              />
-              <div>
-                <h4 className="text-sm font-bold text-white leading-tight">{order.artisan.shopName}</h4>
-                <p className="text-xs text-slate-400">{order.artisan.name}</p>
-                <p className="text-[10px] text-emerald-400 font-mono mt-0.5">Response ~2 hours</p>
-              </div>
-            </div>
-
-            <div className="text-xs text-slate-300 pt-2 border-t border-[#2A1E17] flex justify-between">
-              <span className="text-slate-500">Completed Builds:</span>
-              <span className="font-bold text-white">{order.artisan.completedOrdersCount} orders</span>
-            </div>
-
-            <button className="w-full py-2.5 rounded-xl bg-[#120B08] hover:bg-[#261B15] text-slate-200 text-xs font-bold border border-[#2A1E17] transition-all flex items-center justify-center space-x-2">
-              <MessageSquare className="w-3.5 h-3.5 text-[#EA580C]" />
-              <span>Send Message</span>
-            </button>
-          </div>
-
           {/* Payment Escrow Protection Card */}
           <div className="bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-6 space-y-4 shadow-xl">
             <div className="flex items-center space-x-2 text-emerald-400">
@@ -222,20 +232,22 @@ export const MilestoneTracker: React.FC<MilestoneTrackerProps> = ({ onBack }) =>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#120B08] border border-emerald-950/80">
-              <span className="text-xs text-slate-400">Total Escrow Protection</span>
+              <span className="text-xs text-slate-400">Remaining Payment</span>
               <p className="text-2xl font-extrabold text-emerald-400 font-mono mt-0.5">
-                ₹{order.totalAmount.toLocaleString('en-IN')}.00
+                ₹{order.escrowVaultBalance.toLocaleString('en-IN')}
               </p>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Escrow funds are released incrementally only after Stage 1 timber verification and final delivery photo proof approval.
-            </p>
-
-            <div className="p-3 rounded-xl bg-[#261B15] border border-[#EAB308]/30 flex items-start space-x-2 text-[11px] text-slate-300">
-              <Lock className="w-4 h-4 text-[#EAB308] shrink-0 mt-0.5" />
-              <span>100% money-back guarantee if timber grain or brass inlay does not match specifications.</span>
+            <div className="p-4 rounded-2xl bg-[#120B08] border border-[#2A1E17]">
+              <span className="text-xs text-slate-400">Sent Payment</span>
+              <p className="text-2xl font-extrabold text-white font-mono mt-0.5">
+                ₹{totalReleased.toLocaleString('en-IN')}
+              </p>
             </div>
+
+            <p className="text-[10px] text-slate-400 leading-relaxed pt-2">
+              All payments are secured in the Karagir Escrow Vault and only released upon your explicit approval of physical milestone proofs.
+            </p>
           </div>
 
         </div>

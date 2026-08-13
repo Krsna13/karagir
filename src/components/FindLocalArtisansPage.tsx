@@ -31,6 +31,8 @@ import {
   CITY_AREAS_MAP,
   type RegionalArtisan
 } from '../data/regionalArtisansDatabase';
+import { useKaragirStore } from '../context/KaragirStoreContext';
+import { convertStoreToRegionalArtisan } from '../utils/artisanConverter';
 
 // Custom Leaflet Pin generator matching Image 1: Orange Circle with White Hammer Icon
 const createArtisanPinIcon = (isHovered: boolean, isVerified: boolean) => {
@@ -144,9 +146,17 @@ export const FindLocalArtisansPage: React.FC<FindLocalArtisansPageProps> = ({
     setHoveredArtisanId(artisan.id);
   };
 
+  // Combine static and dynamic artisans
+  const { allStores } = useKaragirStore();
+
+  const allRegionalArtisans = useMemo(() => {
+    const dynamicArtisans = Object.values(allStores || {}).map((store, idx) => convertStoreToRegionalArtisan(store, idx));
+    return [...regionalArtisansDatabase, ...dynamicArtisans];
+  }, [allStores]);
+
   // Filter Logic
   const filteredArtisans = useMemo(() => {
-    return regionalArtisansDatabase.filter((artisan) => {
+    return allRegionalArtisans.filter((artisan) => {
       // 1. City Filter
       if (artisan.city !== selectedCity) return false;
 
@@ -191,7 +201,7 @@ export const FindLocalArtisansPage: React.FC<FindLocalArtisansPageProps> = ({
 
       return true;
     });
-  }, [selectedCity, selectedArea, verifiedOnly, availableOnly, selectedCraftTag, searchQuery]);
+  }, [allRegionalArtisans, selectedCity, selectedArea, verifiedOnly, availableOnly, selectedCraftTag, searchQuery]);
 
   const handleCopyPhone = (id: string, mobileNo: string) => {
     navigator.clipboard.writeText(mobileNo);
@@ -464,7 +474,7 @@ export const FindLocalArtisansPage: React.FC<FindLocalArtisansPageProps> = ({
               Showing <strong className="text-[#EA580C]">{filteredArtisans.length}</strong> Karigars in {selectedCity}
               {selectedArea !== 'All' ? ` (${selectedArea})` : ''}
             </span>
-            {filteredArtisans.length !== regionalArtisansDatabase.length && (
+            {filteredArtisans.length !== allRegionalArtisans.length && (
               <button
                 onClick={handleResetFilters}
                 className="text-xs text-[#EA580C] hover:underline flex items-center gap-1 font-semibold"

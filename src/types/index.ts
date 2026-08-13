@@ -160,3 +160,67 @@ export interface IncomingRequestRadar {
   postedAgo: string;
   timelineWeeks: number;
 }
+
+export interface ProductItem {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  coverImage: string;
+  galleryImages: string[];
+  description: string;
+  materials: string[];
+  startingPrice: number;
+}
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  slug: string;
+  group: string;
+  coverImage: string;
+  description: string;
+}
+
+export interface WorkItem {
+  id: string;
+  title: string;
+  category: string;
+  coverImage: string;
+  galleryImages: string[];
+  material: string;
+  price: number;
+  leadTimeDays: number;
+}
+
+export interface KaragirStore {
+  id: string;
+  artisanName: string;
+  mobile: string;
+  email: string;
+  location: string;
+  craftSpecialty: string;
+  shopName: string;
+  shopTagline: string;
+  yearsExperience: number;
+  shopAvatar: string;
+  shopBanner: string;
+  categories: string[];
+  works: WorkItem[];
+  rating: number;
+  isVerified: boolean;
+}
+
+export interface ArtisanUser {
+  id: string;
+  name: string;
+  phone: string; // Unique Identifier for Login
+  password: string; // Default: "12345" for existing records
+  craftSpecialty: string;
+  location: string;
+  shopName?: string;
+  shopTagline?: string;
+  isVerified: boolean;
+  registeredAt: string;
+}
+

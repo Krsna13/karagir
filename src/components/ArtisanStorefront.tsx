@@ -1,35 +1,36 @@
 import React, { useState } from 'react';
-import type { Artisan, Product } from '../types';
-import { MOCK_ARTISANS, MOCK_PRODUCTS } from '../data/mockData';
-import { Star, ShieldCheck, MapPin, Play, Eye, Search, Hammer, Sparkles, ArrowLeft } from 'lucide-react';
-import { ThreeDProductViewer } from './ThreeDProductViewer';
+import type { Artisan } from '../types';
+import { MOCK_ARTISANS } from '../data/mockData';
+import { MOCK_21_PRODUCTS } from '../data/productsMockDatabase';
+import { Star, ShieldCheck, MapPin, Play, Search, Hammer, ArrowLeft, CheckCircle } from 'lucide-react';
+import { ProductCard } from './ProductCard';
+import { ProductDetailModal } from './ProductDetailModal';
+import type { ProductItem } from '../types';
 
 interface ArtisanStorefrontProps {
   artisan?: Artisan;
   onOpenReel: (artisan: Artisan) => void;
-  onCustomizeProduct?: (product: Product) => void;
+  onCustomizeProduct?: (product: ProductItem) => void;
   onBack?: () => void;
 }
 
 export const ArtisanStorefront: React.FC<ArtisanStorefrontProps> = ({
   artisan = MOCK_ARTISANS[0],
   onOpenReel,
-  onCustomizeProduct,
   onBack,
 }) => {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('All Products');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
-  const filterPills = ['All Products', 'Custom Sofas', 'Teak Mandir', 'Dining Sets', 'Cane & Outdoor'];
+  const filterPills = ['All Products', 'Living Room', 'Dining Room', 'Bedroom', 'Storage', 'Sacred & Specialty'];
 
-  const filteredProducts = MOCK_PRODUCTS.filter((prod) => {
-    const matchesSearch = prod.title.toLowerCase().includes(searchQuery.toLowerCase()) || prod.material.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredProducts = MOCK_21_PRODUCTS.filter((prod) => {
+    const matchesSearch = prod.name.toLowerCase().includes(searchQuery.toLowerCase()) || prod.category.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
       activeFilter === 'All Products' ||
-      (activeFilter === 'Dining Sets' && prod.category === 'Woodwork') ||
-      (activeFilter === 'Teak Mandir' && prod.title.includes('Mandir')) ||
-      (activeFilter === 'Cane & Outdoor' && prod.category === 'Cane');
+      prod.category === activeFilter;
 
     return matchesSearch && matchesCategory;
   });
@@ -104,9 +105,28 @@ export const ArtisanStorefront: React.FC<ArtisanStorefrontProps> = ({
             </div>
           </div>
 
-          <button className="px-6 py-3 rounded-xl bg-[#EA580C] hover:bg-[#F97316] text-white text-xs font-bold transition-all shadow-lg glow-orange flex items-center space-x-2">
-            <Hammer className="w-4 h-4" />
-            <span>Request Custom Order</span>
+          <button 
+            onClick={() => {
+              setOrderPlaced(true);
+              setTimeout(() => setOrderPlaced(false), 4000);
+            }}
+            className={`px-6 py-3 rounded-xl text-xs font-bold transition-all shadow-lg flex items-center space-x-2 ${
+              orderPlaced 
+                ? 'bg-emerald-600 text-white border border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                : 'bg-[#EA580C] hover:bg-[#F97316] text-white glow-orange'
+            }`}
+          >
+            {orderPlaced ? (
+              <>
+                <CheckCircle className="w-4 h-4 text-emerald-300" />
+                <span>Your Order is Placed! ✓</span>
+              </>
+            ) : (
+              <>
+                <Hammer className="w-4 h-4" />
+                <span>Request Custom Order</span>
+              </>
+            )}
           </button>
         </div>
       </section>
@@ -146,87 +166,21 @@ export const ArtisanStorefront: React.FC<ArtisanStorefrontProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProducts.map((product) => (
-            <div
+            <ProductCard 
               key={product.id}
-              className="group bg-[#1F1510] border border-[#2A1E17] hover:border-[#EA580C]/70 rounded-2xl overflow-hidden shadow-xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between"
-            >
-              <div>
-                <div className="relative h-56 overflow-hidden">
-                  <img
-                    src={product.imageUrl}
-                    alt={product.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1F1510] via-transparent to-black/20"></div>
-
-                  <button
-                    onClick={() => setSelectedProduct(product)}
-                    className="absolute bottom-3 right-3 flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-[#EA580C] hover:bg-[#F97316] text-white text-xs font-bold shadow-lg transition-all glow-orange"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>3D View / Inspect</span>
-                  </button>
-
-                  <span className="absolute top-3 left-3 text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-[#120B08]/90 text-amber-400 border border-[#2A1E17]">
-                    #{product.category}
-                  </span>
-                </div>
-
-                <div className="p-5 space-y-3">
-                  <h3 className="text-base font-bold text-white leading-snug group-hover:text-[#EA580C] transition-colors">
-                    {product.title}
-                  </h3>
-                  <p className="text-xs text-slate-400 line-clamp-2">{product.description}</p>
-                  
-                  <div className="text-xs text-slate-300 space-y-1 pt-1 border-t border-[#2A1E17]">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Material:</span>
-                      <span className="font-semibold text-white">{product.material}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Dimensions:</span>
-                      <span className="font-mono text-slate-300">{product.dimensions}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 pt-0 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Base Price</span>
-                  <span className="text-lg font-extrabold text-white">₹{product.price.toLocaleString('en-IN')}</span>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => onCustomizeProduct && onCustomizeProduct(product)}
-                    className="px-4 py-2.5 rounded-xl bg-[#EA580C] hover:bg-[#F97316] text-white text-xs font-bold transition-colors flex items-center space-x-1 shadow-md"
-                  >
-                    <Hammer className="w-3.5 h-3.5" />
-                    <span>Customize</span>
-                  </button>
-                  <button
-                    onClick={() => setSelectedProduct(product)}
-                    className="px-4 py-2.5 rounded-xl bg-[#120B08] hover:bg-[#261B15] text-[#EA580C] hover:text-white text-xs font-bold border border-[#EA580C]/40 transition-colors flex items-center space-x-1"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Inspect 3D</span>
-                  </button>
-                </div>
-              </div>
-
-            </div>
+              product={product}
+              onClick={setSelectedProduct}
+            />
           ))}
         </div>
       </section>
 
-      {/* 3D Inspection Viewport Modal */}
-      {selectedProduct && (
-        <ThreeDProductViewer
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
+      {/* 3D Inspection Viewport Modal / Detail Modal */}
+      <ProductDetailModal
+        product={selectedProduct}
+        isOpen={selectedProduct !== null}
+        onClose={() => setSelectedProduct(null)}
+      />
 
     </div>
   );
