@@ -137,6 +137,150 @@ export type Database = {
           created_at?: string | null
         }
       }
+      material_batches: {
+        Row: {
+          id: string
+          order_id: string
+          passport_id: string
+          material_type: string
+          species: string
+          grade: string
+          supplier_name: string
+          purchase_date: string
+          status: string
+          sample_id: string | null
+          sample_status: string
+          sample_tracking_number: string | null
+          sample_shipped_at: string | null
+          sample_received_at: string | null
+          sample_verified_at: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          passport_id: string
+          material_type: string
+          species: string
+          grade: string
+          supplier_name: string
+          purchase_date: string
+          status: string
+          sample_id?: string | null
+          sample_status?: string
+          sample_tracking_number?: string | null
+          sample_shipped_at?: string | null
+          sample_received_at?: string | null
+          sample_verified_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          passport_id?: string
+          material_type?: string
+          species?: string
+          grade?: string
+          supplier_name?: string
+          purchase_date?: string
+          status?: string
+          sample_id?: string | null
+          sample_status?: string
+          sample_tracking_number?: string | null
+          sample_shipped_at?: string | null
+          sample_received_at?: string | null
+          sample_verified_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+      material_evidence: {
+        Row: {
+          id: string
+          order_id: string
+          material_batch_id: string
+          type: string
+          storage_path: string
+          file_hash: string
+          captured_at: string | null
+          uploaded_at: string | null
+          verification_status: string
+          created_by: string
+          replaced_evidence_id: string | null
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          material_batch_id: string
+          type: string
+          storage_path: string
+          file_hash: string
+          captured_at?: string | null
+          uploaded_at?: string | null
+          verification_status: string
+          created_by: string
+          replaced_evidence_id?: string | null
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          material_batch_id?: string
+          type?: string
+          storage_path?: string
+          file_hash?: string
+          captured_at?: string | null
+          uploaded_at?: string | null
+          verification_status?: string
+          created_by?: string
+          replaced_evidence_id?: string | null
+        }
+      }
+      certification_records: {
+        Row: {
+          id: string
+          material_batch_id: string
+          type: string
+          certificate_number: string
+          issuing_authority: string
+          issuer_name: string
+          issued_at: string
+          expires_at: string | null
+          document_url: string
+          verification_status: string
+          verification_notes: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          id?: string
+          material_batch_id: string
+          type: string
+          certificate_number: string
+          issuing_authority: string
+          issuer_name: string
+          issued_at: string
+          expires_at?: string | null
+          document_url: string
+          verification_status: string
+          verification_notes?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          id?: string
+          material_batch_id?: string
+          type?: string
+          certificate_number?: string
+          issuing_authority?: string
+          issuer_name?: string
+          issued_at?: string
+          expires_at?: string | null
+          document_url?: string
+          verification_status?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never

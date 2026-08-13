@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { AppMode, LocationPin, Artisan, Product, ProductItem } from './types';
 import { NASHIK_LOCALITIES, MOCK_ARTISANS } from './data/mockData';
 import { Navbar } from './components/Navbar';
@@ -16,6 +16,9 @@ import { KaragirStoreProvider } from './context/KaragirStoreContext';
 import { KaragirAuthModal } from './components/KaragirAuthModal';
 import { CreateStoreWizard } from './components/CreateStoreWizard';
 import { EscrowProvider } from './context/EscrowContext';
+import { MaterialPassportProvider } from './context/MaterialPassportContext';
+import { PublicPassportVerification } from './components/PublicPassportVerification';
+import { AdminVerificationQueue } from './components/AdminVerificationQueue';
 import { Hammer, ShieldCheck, Heart, MapPin } from 'lucide-react';
 
 function AppContent() {
@@ -25,6 +28,26 @@ function AppContent() {
   const [selectedArtisan, setSelectedArtisan] = useState<Artisan>(MOCK_ARTISANS[0]);
   const [activeReelArtisan, setActiveReelArtisan] = useState<Artisan | null>(null);
   const [selectedProductForCustomization, setSelectedProductForCustomization] = useState<Product | ProductItem | null>(null);
+  const [publicPassportId, setPublicPassportId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const parseUrl = () => {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      if (path.startsWith('/verify/material/')) {
+        const passportId = path.substring('/verify/material/'.length);
+        setPublicPassportId(passportId);
+        setActiveTab('public-passport');
+      } else if (hash.startsWith('#/verify/material/')) {
+        const passportId = hash.substring('#/verify/material/'.length);
+        setPublicPassportId(passportId);
+        setActiveTab('public-passport');
+      }
+    };
+    parseUrl();
+    window.addEventListener('hashchange', parseUrl);
+    return () => window.removeEventListener('hashchange', parseUrl);
+  }, []);
 
 
 
@@ -141,6 +164,17 @@ function AppContent() {
                     onBack={() => setActiveTab('find-artisans')}
                   />
                 )}
+
+                {activeTab === 'public-passport' && (
+                  <PublicPassportVerification
+                    passportId={publicPassportId}
+                    onBack={() => {
+                      window.history.pushState({}, '', '/');
+                      setPublicPassportId(null);
+                      setActiveTab('find-artisans');
+                    }}
+                  />
+                )}
               </>
             )}
 
@@ -149,6 +183,19 @@ function AppContent() {
                 {activeTab === 'artisan-portal' && (
                   <ArtisanPortal
                     onBackToBuyer={() => {
+                      setMode('buyer');
+                      setActiveTab('find-artisans');
+                    }}
+                  />
+                )}
+              </>
+            )}
+
+            {mode === 'admin' && (
+              <>
+                {activeTab === 'admin-queue' && (
+                  <AdminVerificationQueue
+                    onBack={() => {
                       setMode('buyer');
                       setActiveTab('find-artisans');
                     }}
@@ -259,7 +306,9 @@ export function App() {
   return (
     <EscrowProvider>
       <KaragirStoreProvider>
-        <AppContent />
+        <MaterialPassportProvider>
+          <AppContent />
+        </MaterialPassportProvider>
       </KaragirStoreProvider>
     </EscrowProvider>
   );

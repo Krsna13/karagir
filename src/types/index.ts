@@ -1,4 +1,4 @@
-export type AppMode = 'buyer' | 'artisan';
+export type AppMode = 'buyer' | 'artisan' | 'admin';
 
 export type CategoryType = 'Woodwork' | 'Pottery' | 'Brass' | 'Leather' | 'Cane' | 'All';
 
@@ -223,4 +223,6 @@ export interface ArtisanUser {
   isVerified: boolean;
   registeredAt: string;
 }
+
+export * from './materialPassport';
 

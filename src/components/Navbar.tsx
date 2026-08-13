@@ -45,7 +45,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     onModeChange(targetMode);
     if (targetMode === 'artisan') {
       onTabChange('artisan-portal');
-    } else if (activeTab === 'artisan-portal') {
+    } else if (targetMode === 'admin') {
+      onTabChange('admin-queue');
+    } else {
       onTabChange('find-artisans');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -214,6 +216,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Artisan Portal</span>
+              </button>
+
+              <button
+                onClick={() => handleModeSwitch('admin')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1 ${
+                  mode === 'admin'
+                    ? 'bg-[#EA580C] text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span>Admin Queue</span>
               </button>
             </div>
 
