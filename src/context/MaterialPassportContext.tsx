@@ -7,7 +7,9 @@ import type {
   EvidenceType,
   MaterialBatchStatus,
   SampleStatus,
-  CertificationVerificationStatus
+  CertificationVerificationStatus,
+  VerificationStatus,
+  PhysicalVerificationStatus
 } from '../types/materialPassport';
 import * as service from '../services/materialPassportService';
 import { useKaragirStore } from './KaragirStoreContext';
@@ -25,9 +27,34 @@ interface MaterialPassportContextType {
     species: string,
     grade: string,
     supplierName: string,
-    purchaseDate: string
+    supplierBatchId: string,
+    invoiceNumber: string,
+    purchasedQuantity: number,
+    allocatedQuantity: number,
+    purchaseDate: string,
+    extraOptions?: {
+      category?: string;
+      description?: string;
+      supplierLocation?: string;
+      artisanId?: string;
+      artisanName?: string;
+      projectId?: string;
+      projectName?: string;
+      customPassportId?: string;
+    }
   ) => Promise<MaterialBatch | null>;
   updateBatchStatus: (status: MaterialBatchStatus) => Promise<MaterialBatch | null>;
+  updateMaterialVerification: (
+    batchId: string,
+    verificationStatus: VerificationStatus,
+    physicalStatus: PhysicalVerificationStatus,
+    physicalChecks?: {
+      quantityChecked?: boolean;
+      dimensionsChecked?: boolean;
+      conditionChecked?: boolean;
+      supplierBatchRecorded?: boolean;
+    }
+  ) => Promise<MaterialBatch | null>;
   uploadEvidence: (
     file: File, 
     type: EvidenceType, 
@@ -55,6 +82,7 @@ interface MaterialPassportContextType {
     sampleStatus: SampleStatus
   ) => Promise<MaterialBatch | null>;
   checkDuplicate: (file: File) => Promise<{ isDuplicate: boolean; orderId?: string; filename?: string }>;
+  checkDuplicateSupplierBatch: (supplierBatchId: string) => Promise<{ isDuplicate: boolean; orderId?: string }>;
   loadAdminQueue: () => Promise<void>;
   resetPassport: () => void;
 }
@@ -71,7 +99,7 @@ export const MaterialPassportProvider: React.FC<{ children: React.ReactNode }> =
 
   // Helper to get active user ID
   const getUserId = () => {
-    return storeData?.id || 'mock-user-id';
+    return storeData?.id || 'ART-102';
   };
 
   const loadPassport = async (orderId: string): Promise<MaterialPassport | null> => {
@@ -94,20 +122,50 @@ export const MaterialPassportProvider: React.FC<{ children: React.ReactNode }> =
     species: string,
     grade: string,
     supplierName: string,
-    purchaseDate: string
+    supplierBatchId: string,
+    invoiceNumber: string,
+    purchasedQuantity: number,
+    allocatedQuantity: number,
+    purchaseDate: string,
+    extraOptions?: {
+      category?: string;
+      description?: string;
+      supplierLocation?: string;
+      artisanId?: string;
+      artisanName?: string;
+      projectId?: string;
+      projectName?: string;
+      customPassportId?: string;
+    }
   ): Promise<MaterialBatch | null> => {
     setIsLoading(true);
     try {
-      const passportId = `MP-${Math.floor(10000 + Math.random() * 90000)}`;
+      const passportId = extraOptions?.customPassportId || service.generateMaterialId();
+      
       const batch = await service.createMaterialBatch({
         orderId,
         passportId,
         materialType,
         species,
         grade,
+        category: extraOptions?.category || 'Wood',
+        description: extraOptions?.description || `Seasoned ${materialType} purchased for custom furniture production.`,
         supplierName,
+        supplierLocation: extraOptions?.supplierLocation || 'Nashik, Maharashtra',
+        supplierBatchId,
+        invoiceNumber,
+        purchasedQuantity,
+        allocatedQuantity,
+        remainingQuantity: purchasedQuantity - allocatedQuantity,
+        quantityUnit: 'kg',
         purchaseDate,
+        artisanId: extraOptions?.artisanId || getUserId(),
+        artisanName: extraOptions?.artisanName || storeData?.artisanName || 'Rameshwar Suthar',
+        projectId: extraOptions?.projectId || orderId,
+        projectName: extraOptions?.projectName || order?.productTitle || 'Custom Woodwork Request',
         status: 'pending_client_review',
+        verificationStatus: 'PENDING',
+        physicalVerificationStatus: 'pending',
         sampleStatus: 'none'
       });
       
@@ -121,7 +179,7 @@ export const MaterialPassportProvider: React.FC<{ children: React.ReactNode }> =
       return batch;
     } catch (e) {
       console.error('Failed to create material batch', e);
-      return null;
+      throw e;
     } finally {
       setIsLoading(false);
     }
@@ -144,6 +202,46 @@ export const MaterialPassportProvider: React.FC<{ children: React.ReactNode }> =
     }
   };
 
+  const updateMaterialVerification = async (
+    batchId: string,
+    verificationStatus: VerificationStatus,
+    physicalStatus: PhysicalVerificationStatus,
+    physicalChecks?: {
+      quantityChecked?: boolean;
+      dimensionsChecked?: boolean;
+      conditionChecked?: boolean;
+      supplierBatchRecorded?: boolean;
+    }
+  ): Promise<MaterialBatch | null> => {
+    setIsLoading(true);
+    try {
+      const updatedBatch = await service.updateMaterialVerification(
+        batchId,
+        verificationStatus,
+        physicalStatus,
+        {
+          quantityChecked: physicalChecks?.quantityChecked ?? true,
+          dimensionsChecked: physicalChecks?.dimensionsChecked ?? true,
+          conditionChecked: physicalChecks?.conditionChecked ?? true,
+          supplierBatchRecorded: physicalChecks?.supplierBatchRecorded ?? true
+        }
+      );
+
+      if (updatedBatch) {
+        if (passport?.batch?.id === batchId) {
+          setPassport(prev => prev ? { ...prev, batch: updatedBatch } : null);
+        }
+        setAdminQueue(prev => prev.map(p => p.batch.id === batchId ? { ...p, batch: updatedBatch } : p));
+      }
+      return updatedBatch;
+    } catch (e) {
+      console.error('Failed to update material verification status', e);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const uploadEvidence = async (
     file: File,
     type: EvidenceType,
@@ -153,17 +251,15 @@ export const MaterialPassportProvider: React.FC<{ children: React.ReactNode }> =
     setIsLoading(true);
     try {
       const record = await service.uploadEvidenceFile(
+        file,
         passport.batch.orderId,
         passport.batch.id,
-        file,
         type,
-        getUserId(),
-        replacedEvidenceId
+        getUserId()
       );
       if (record) {
         setPassport(prev => {
           if (!prev) return null;
-          // Filter out the old replaced evidence from visual list if applicable, or keep it for audit log
           let updatedEvidence = [...prev.evidence];
           if (replacedEvidenceId) {
             updatedEvidence = updatedEvidence.map(e => 
@@ -193,23 +289,21 @@ export const MaterialPassportProvider: React.FC<{ children: React.ReactNode }> =
     issuingAuthority: string,
     issuerName: string,
     issuedAt: string,
-    expiresAt?: string,
-    documentUrl?: string
+    expiresAt?: string
   ): Promise<CertificationRecord | null> => {
     if (!passport?.batch) return null;
     setIsLoading(true);
     try {
-      const record = await service.addCertificationRecord({
-        materialBatchId: passport.batch.id,
+      const record = await service.addCertificationRecord(
+        passport.batch.id,
         type,
         certificateNumber,
         issuingAuthority,
         issuerName,
         issuedAt,
-        expiresAt,
-        documentUrl: documentUrl || 'https://example.com/mock-cert.pdf',
-        verificationStatus: 'PENDING_REVIEW'
-      });
+        undefined,
+        expiresAt
+      );
       if (record) {
         setPassport(prev => prev ? { ...prev, certifications: [...prev.certifications, record] } : null);
       }
@@ -229,21 +323,19 @@ export const MaterialPassportProvider: React.FC<{ children: React.ReactNode }> =
   ): Promise<CertificationRecord | null> => {
     setIsLoading(true);
     try {
-      const updated = await service.updateCertificationRecord(certId, {
-        verificationStatus: status,
-        verificationNotes: notes,
-        verifiedAt: new Date().toISOString()
-      });
-      if (updated && passport) {
+      await service.updateCertificationRecord(certId, status, notes);
+      if (passport) {
         setPassport(prev => {
           if (!prev) return null;
           return {
             ...prev,
-            certifications: prev.certifications.map(c => c.id === certId ? updated : c)
+            certifications: prev.certifications.map(c => 
+              c.id === certId ? { ...c, verificationStatus: status, verificationNotes: notes } : c
+            )
           };
         });
       }
-      return updated;
+      return null;
     } catch (e) {
       console.error('Failed to update certification status', e);
       return null;
@@ -292,6 +384,8 @@ export const MaterialPassportProvider: React.FC<{ children: React.ReactNode }> =
       } else if (sampleStatus === 'verified') {
         updates.sampleVerifiedAt = now;
         updates.status = 'client_approved';
+        updates.verificationStatus = 'VERIFIED';
+        updates.physicalVerificationStatus = 'completed';
       }
       
       const updatedBatch = await service.updateMaterialBatch(passport.batch.id, updates);
@@ -311,6 +405,12 @@ export const MaterialPassportProvider: React.FC<{ children: React.ReactNode }> =
     if (!passport?.batch) return { isDuplicate: false };
     const hash = await computeFileHash(file);
     const result = await service.checkDuplicateEvidence(hash, passport.batch.orderId);
+    return result || { isDuplicate: false };
+  };
+
+  const checkDuplicateSupplierBatch = async (supplierBatchId: string) => {
+    if (!passport?.batch) return { isDuplicate: false };
+    const result = await service.checkDuplicateSupplierBatch(supplierBatchId);
     return result || { isDuplicate: false };
   };
 
@@ -347,12 +447,14 @@ export const MaterialPassportProvider: React.FC<{ children: React.ReactNode }> =
       loadPassport,
       createNewBatch,
       updateBatchStatus,
+      updateMaterialVerification,
       uploadEvidence,
       addCert,
       updateCertStatus,
       updateSampleShipping,
       updateSampleStatus,
       checkDuplicate,
+      checkDuplicateSupplierBatch,
       loadAdminQueue,
       resetPassport
     }}>

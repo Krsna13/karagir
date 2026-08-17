@@ -187,13 +187,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Milestone Tracker</span>
               </button>
+
+              <button
+                onClick={() => handleTabClick('public-passport')}
+                className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  activeTab === 'public-passport'
+                    ? 'bg-[#EA580C] text-white shadow-md glow-orange'
+                    : 'text-slate-300 hover:text-white hover:bg-[#261B15]'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Verify Material</span>
+              </button>
             </nav>
           )}
 
           {/* Right: Dual-Role Mode Switcher & Profile */}
           <div className="flex items-center space-x-4">
             
-            {/* Mode Switcher Toggle */}
+            {/* Mode Switcher Toggle (Buyer Mode vs Artisan Portal) */}
             <div className="flex items-center p-1 rounded-full bg-[#1F1510] border border-[#2A1E17] shadow-md">
               <button
                 onClick={() => handleModeSwitch('buyer')}
@@ -208,7 +220,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <button
                 onClick={() => handleModeSwitch('artisan')}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1 ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
                   mode === 'artisan'
                     ? 'bg-[#EA580C] text-white shadow-md'
                     : 'text-slate-400 hover:text-slate-200'
@@ -216,17 +228,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Artisan Portal</span>
-              </button>
-
-              <button
-                onClick={() => handleModeSwitch('admin')}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1 ${
-                  mode === 'admin'
-                    ? 'bg-[#EA580C] text-white shadow-md'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>Admin Queue</span>
               </button>
             </div>
 

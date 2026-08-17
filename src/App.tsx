@@ -18,7 +18,6 @@ import { CreateStoreWizard } from './components/CreateStoreWizard';
 import { EscrowProvider } from './context/EscrowContext';
 import { MaterialPassportProvider } from './context/MaterialPassportContext';
 import { PublicPassportVerification } from './components/PublicPassportVerification';
-import { AdminVerificationQueue } from './components/AdminVerificationQueue';
 import { Hammer, ShieldCheck, Heart, MapPin } from 'lucide-react';
 
 function AppContent() {
@@ -162,6 +161,10 @@ function AppContent() {
                 {activeTab === 'milestone-tracker' && (
                   <MilestoneTracker
                     onBack={() => setActiveTab('find-artisans')}
+                    onNavigateToVerify={(passportId) => {
+                      setPublicPassportId(passportId);
+                      setActiveTab('public-passport');
+                    }}
                   />
                 )}
 
@@ -171,7 +174,7 @@ function AppContent() {
                     onBack={() => {
                       window.history.pushState({}, '', '/');
                       setPublicPassportId(null);
-                      setActiveTab('find-artisans');
+                      setActiveTab('milestone-tracker');
                     }}
                   />
                 )}
@@ -183,19 +186,6 @@ function AppContent() {
                 {activeTab === 'artisan-portal' && (
                   <ArtisanPortal
                     onBackToBuyer={() => {
-                      setMode('buyer');
-                      setActiveTab('find-artisans');
-                    }}
-                  />
-                )}
-              </>
-            )}
-
-            {mode === 'admin' && (
-              <>
-                {activeTab === 'admin-queue' && (
-                  <AdminVerificationQueue
-                    onBack={() => {
                       setMode('buyer');
                       setActiveTab('find-artisans');
                     }}

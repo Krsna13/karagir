@@ -8,24 +8,96 @@ export type MaterialBatchStatus =
 
 export type SampleStatus = 'none' | 'required' | 'prepared' | 'shipped' | 'received' | 'verified';
 
+export type VerificationStatus = 'VERIFIED' | 'PENDING' | 'REJECTED';
+export type TraceabilityStatus = 'TRACEABILITY_COMPLETE' | 'TRACEABILITY_PARTIAL' | 'PENDING' | 'REJECTED';
+export type PhysicalVerificationStatus = 'completed' | 'pending' | 'rejected';
+
+export interface ProjectAllocation {
+  id?: string;
+  projectId: string;
+  projectName: string;
+  allocatedQuantity: number;
+  allocationDate: string;
+}
+
+export interface VerificationHistoryEvent {
+  id: string;
+  stageNumber: number;
+  title: string;
+  date: string;
+  description: string;
+  isCompleted: boolean;
+}
+
 export interface MaterialBatch {
   id: string;
   orderId: string;
-  passportId: string;
-  materialType: string;
-  species: string;
-  grade: string;
-  supplierName: string;
-  purchaseDate: string;
+  passportId: string; // KAR-MAT-YYYY-XXXXX
+  materialType: string; // e.g. Seasoned Sagwan Teak
+  species?: string; // e.g. Teak Wood
+  category?: string; // Wood, Metal, Stone, Clay, Rattan & Cane, Textile, Other
+  grade: string; // e.g. A
+  description?: string; // Detailed material description
+  
+  // Supplier Information
+  supplierName: string; // e.g. Sahrangpur Pvt Wood
+  supplierLocation?: string; // e.g. Nashik, Maharashtra
+  supplierContact?: string; // e.g. +91 98231 44520
+  supplierGst?: string; // e.g. 27AABCS1429B1Z1
+  supplierBatchId: string; // Original factory/supplier batch ID e.g. TV-0826-19
+  
+  // Sourcing & Invoice
+  invoiceNumber: string; // e.g. INV-4521
+  purchaseDate: string; // e.g. 2026-08-14
+  purchasedQuantity: number;
+  allocatedQuantity: number;
+  remainingQuantity: number;
+  quantityUnit: string; // kg, meter, sq.ft, piece, liter, other
+  purchaseAmount?: number;
+  
+  // Artisan & Project References
+  artisanId?: string;
+  artisanName?: string;
+  projectId?: string;
+  projectName?: string;
+  projectAllocations?: ProjectAllocation[];
+
+  // Verification & Traceability Status
+  verificationStatus?: VerificationStatus;
+  traceabilityStatus?: TraceabilityStatus;
   status: MaterialBatchStatus;
+  lastVerificationUpdate?: string;
+
+  // Physical Inspection Details
+  physicalVerificationStatus?: PhysicalVerificationStatus;
+  physicalQuantityChecked?: boolean;
+  physicalDimensionsChecked?: boolean;
+  physicalConditionChecked?: boolean;
+  supplierBatchRecorded?: boolean;
+  physicalSampleInspected?: boolean;
+  verifiedBy?: string; // e.g. Rameshwar Suthar / Lead Inspector
+  verifiedDate?: string; // e.g. 14 August 2026
+
+  // Optional Certificate Shortcut
+  certificateAvailable?: boolean;
+  certificateName?: string;
+  certificateNumber?: string;
+  certificateAuthority?: string;
+  certificateIssueDate?: string;
+  certificateExpiryDate?: string;
+  certificateStatus?: string; // "Certificate Submitted" | "Certificate Record Added"
+
+  // Physical Off-Cut Sample (Optional)
   sampleId?: string;
   sampleStatus: SampleStatus;
   sampleTrackingNumber?: string;
   sampleShippedAt?: string;
   sampleReceivedAt?: string;
   sampleVerifiedAt?: string;
+
   createdAt: string;
   updatedAt: string;
+  verificationHistory?: VerificationHistoryEvent[];
 }
 
 export type EvidenceType =
@@ -36,6 +108,7 @@ export type EvidenceType =
   | 'raw_full'
   | 'grain_closeup'
   | 'angle_additional'
+  | 'packaging_label'
   | 'video'
   | 'process_cut'
   | 'process_join'
@@ -43,7 +116,7 @@ export type EvidenceType =
   | 'process_finish'
   | 'final_furniture';
 
-export type EvidenceVerificationStatus = 'uploaded' | 'approved' | 'rejected';
+export type EvidenceVerificationStatus = 'uploaded' | 'approved' | 'rejected' | 'verified';
 
 export interface EvidenceRecord {
   id: string;

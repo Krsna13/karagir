@@ -2,7 +2,16 @@ import React, { useEffect, useState } from 'react';
 import type { MaterialPassport } from '../types/materialPassport';
 import { getPublicMaterialPassport } from '../services/materialPassportService';
 import { MaterialPassportView } from './MaterialPassportView';
-import { ShieldCheck, ArrowLeft, Award, User, Factory, Compass } from 'lucide-react';
+import { 
+  ShieldCheck, 
+  ArrowLeft, 
+  Search, 
+  AlertTriangle, 
+  XCircle, 
+  CheckCircle2, 
+  FileSearch, 
+  Info
+} from 'lucide-react';
 
 interface PublicPassportVerificationProps {
   passportId: string | null;
@@ -13,163 +22,246 @@ export const PublicPassportVerification: React.FC<PublicPassportVerificationProp
   passportId, 
   onBack 
 }) => {
+  const [manualIdInput, setManualIdInput] = useState(passportId || 'KAR-MAT-2026-97373');
+  const [searchedId, setSearchedId] = useState<string | null>(passportId);
   const [passport, setPassport] = useState<MaterialPassport | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  const fetchPassport = async (idToFetch: string) => {
+    if (!idToFetch.trim()) return;
+    setLoading(true);
+    setHasSearched(true);
+    setSearchedId(idToFetch.trim());
+    try {
+      const data = await getPublicMaterialPassport(idToFetch.trim());
+      setPassport(data);
+    } catch (e) {
+      console.error('Error fetching material passport:', e);
+      setPassport(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPublicPassport = async () => {
-      if (!passportId) return;
-      setLoading(true);
-      const data = await getPublicMaterialPassport(passportId);
-      setPassport(data);
-      setLoading(false);
-    };
-
-    fetchPublicPassport();
+    if (passportId) {
+      setManualIdInput(passportId);
+      fetchPassport(passportId);
+    }
   }, [passportId]);
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 border-4 border-[#EA580C] border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-slate-400 font-mono">Retrieving Material Passport #{passportId}...</p>
-      </div>
-    );
-  }
+  const handleVerifyClick = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!manualIdInput.trim()) return;
+    fetchPassport(manualIdInput.trim());
+  };
 
-  if (!passport) {
-    return (
-      <div className="max-w-md mx-auto my-12 text-center p-8 bg-[#1F1510] border border-[#2A1E17] rounded-3xl space-y-6 shadow-2xl">
-        <AlertTriangle className="w-12 h-12 text-[#EA580C] mx-auto animate-bounce" />
-        <h2 className="text-xl font-bold text-white">Passport Not Found</h2>
-        <p className="text-xs text-slate-400">The Material Passport ID you scanned does not match any batch registered on the Karagir platform.</p>
-        <button
-          onClick={onBack}
-          className="px-6 py-2.5 rounded-xl bg-[#EA580C] hover:bg-[#F97316] text-white text-xs font-bold w-full"
-        >
-          Go Back
-        </button>
-      </div>
-    );
-  }
-
-  const { batch, evidence } = passport;
-  const isApproved = batch.status === 'client_approved';
+  const handleSelectDemoId = (demoId: string) => {
+    setManualIdInput(demoId);
+    fetchPassport(demoId);
+  };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-20">
+    <div className="max-w-4xl mx-auto space-y-8 pb-20">
       
-      {/* Back Button */}
-      <div>
+      {/* Navigation Header */}
+      <div className="flex items-center justify-between">
         <button
+          type="button"
           onClick={onBack}
           className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-[#1F1510] hover:bg-[#261B15] text-slate-200 hover:text-white border border-[#3E2E24] text-xs font-extrabold transition-all shadow-md group"
         >
           <ArrowLeft className="w-4 h-4 text-[#EA580C] group-hover:-translate-x-1 transition-transform" />
-          <span>← Back to Marketplace</span>
+          <span>← Back to Milestone Tracker</span>
         </button>
+
+        <div className="flex items-center space-x-2 text-xs text-slate-400">
+          <ShieldCheck className="w-4 h-4 text-[#EA580C]" />
+          <span className="font-mono text-[11px] uppercase tracking-wider">Karagir Trust Engine</span>
+        </div>
       </div>
 
-      {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        {/* Left Column: Authentic Seal and Passport Badge */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-6 shadow-2xl text-center space-y-6 relative overflow-hidden">
-            
-            {/* Absolute decorative glow */}
-            <div className="absolute -right-16 -top-16 w-32 h-32 bg-[#EA580C]/10 rounded-full blur-2xl"></div>
-
-            <div className="w-20 h-20 rounded-full bg-amber-950/20 border-2 border-amber-800/40 text-amber-500 flex items-center justify-center mx-auto shadow-inner">
-              <Award className="w-10 h-10 stroke-[1.5]" />
-            </div>
-
-            <div className="space-y-2">
-              <h2 className="text-lg font-bold text-white">Certificate of Material Provenance</h2>
-              <p className="text-xs text-slate-400 leading-relaxed px-4">
-                This public verification passport displays a verified audit trail of raw materials logged by the craftsman and manually checked by the client.
-              </p>
-            </div>
-
-            <div className="border-t border-[#2A1E17] pt-6 flex flex-col items-center justify-center space-y-3">
-              <span className="text-[10px] text-slate-500 uppercase tracking-widest font-mono">Provenance Status</span>
-              {isApproved ? (
-                <div className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-emerald-950/40 border border-emerald-800 text-emerald-400 text-xs font-extrabold shadow-sm">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>CLIENT VERIFIED & SIGNED</span>
-                </div>
-              ) : (
-                <div className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-amber-950/40 border border-amber-800 text-amber-400 text-xs font-extrabold shadow-sm">
-                  <span>PENDING VERIFICATION</span>
-                </div>
-              )}
-            </div>
-
-            <p className="text-[9px] text-slate-500 font-mono">Verified via Karagir Escrow Contract Security</p>
+      {/* =================================================== */}
+      {/* VERIFY YOUR MATERIAL - SEARCH & CODE INPUT SECTION  */}
+      {/* =================================================== */}
+      <div className="bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6">
+        <div className="text-center max-w-xl mx-auto space-y-2">
+          <div className="w-12 h-12 rounded-2xl bg-[#120B08] border border-[#EA580C] text-[#EA580C] mx-auto flex items-center justify-center shadow-lg">
+            <FileSearch className="w-6 h-6" />
           </div>
-
-          <MaterialPassportView passport={passport} />
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white uppercase tracking-tight">
+            Verify Material
+          </h1>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Enter the Kaaragir Material ID provided by the artisan to retrieve the recorded supplier purchase, batch information, quantity, photographs and applicable documentation.
+          </p>
         </div>
 
-        {/* Right Column: Visual Journey & Safe Public Specs */}
-        <div className="lg:col-span-7 bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-6 sm:p-8 space-y-8 shadow-2xl">
-          
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <Compass className="w-5 h-5 text-[#EA580C]" />
-              <span>Material Origin & Crafting Journey</span>
+        {/* Manual Code Input Form */}
+        <form onSubmit={handleVerifyClick} className="max-w-lg mx-auto space-y-4 pt-2">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block text-left">
+              Enter Material Verification ID
+            </label>
+            <div className="relative">
+              <input 
+                type="text" 
+                placeholder="KAR-MAT-2026-97373" 
+                value={manualIdInput}
+                onChange={(e) => setManualIdInput(e.target.value)}
+                className="w-full px-5 py-4 rounded-2xl bg-[#120B08] border-2 border-[#2A1E17] focus:border-[#EA580C] text-white text-base font-mono tracking-wider text-center focus:outline-none shadow-inner transition-colors"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 rounded-2xl bg-[#EA580C] hover:bg-[#F97316] text-white text-sm font-extrabold uppercase tracking-widest transition-all shadow-lg glow-orange flex items-center justify-center space-x-2 disabled:opacity-50"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <Search className="w-4 h-4" />
+                <span>Verify Material</span>
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Demo Quick-Select ID Badges for Hackathon Judges */}
+        <div className="max-w-lg mx-auto pt-2 border-t border-[#2A1E17]/80">
+          <span className="text-[10px] text-slate-500 uppercase tracking-widest font-mono block mb-2 text-center">
+            Demo Test Material IDs:
+          </span>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleSelectDemoId('KAR-MAT-2026-97373')}
+              className="px-3 py-1.5 rounded-xl bg-[#120B08] hover:bg-[#261B15] border border-emerald-900/50 text-emerald-400 text-[11px] font-mono font-bold transition-colors"
+            >
+              ✓ KAR-MAT-2026-97373 (Verified)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectDemoId('KAR-MAT-2026-10482')}
+              className="px-3 py-1.5 rounded-xl bg-[#120B08] hover:bg-[#261B15] border border-amber-900/50 text-amber-400 text-[11px] font-mono font-bold transition-colors"
+            >
+              ⚠ KAR-MAT-2026-10482 (Pending)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectDemoId('KAR-MAT-2026-30219')}
+              className="px-3 py-1.5 rounded-xl bg-[#120B08] hover:bg-[#261B15] border border-rose-900/50 text-rose-400 text-[11px] font-mono font-bold transition-colors"
+            >
+              ✕ KAR-MAT-2026-30219 (Rejected)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* =================================================== */}
+      {/* VERIFICATION RESULTS CONTAINER                     */}
+      {/* =================================================== */}
+      {loading && (
+        <div className="min-h-[40vh] flex flex-col items-center justify-center space-y-4 bg-[#1F1510] border border-[#2A1E17] rounded-3xl p-12">
+          <div className="w-12 h-12 border-4 border-[#EA580C] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-slate-400 font-mono tracking-wider">
+            Retrieving material traceability ledger for #{searchedId}...
+          </p>
+        </div>
+      )}
+
+      {!loading && hasSearched && !passport && (
+        /* RESULT STATE 2: NOT FOUND */
+        <div className="max-w-lg mx-auto text-center p-8 sm:p-10 bg-[#1F1510] border border-rose-900/50 rounded-3xl space-y-6 shadow-2xl">
+          <div className="w-14 h-14 rounded-full bg-rose-950/40 border border-rose-800 text-rose-400 mx-auto flex items-center justify-center">
+            <XCircle className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-extrabold text-white uppercase tracking-wider">
+              ✕ MATERIAL ID NOT FOUND
             </h2>
-            <p className="text-xs text-slate-400 mt-1">Verifiable timeline tracking materials from lumberyard procurement to final assembly.</p>
+            <p className="text-sm font-mono text-rose-400 font-bold">{searchedId}</p>
+            <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
+              The Material ID could not be found. Please check the code and try again.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-[#2A1E17] pb-6">
-            <div className="p-4 bg-[#120B08] border border-[#2A1E17] rounded-2xl flex items-start space-x-3">
-              <Factory className="w-4 h-4 text-[#EA580C] mt-0.5" />
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Supplier Name</span>
-                <span className="text-xs text-white font-bold">{batch.supplierName}</span>
-                <span className="text-[9px] text-slate-500 block font-mono mt-0.5">Sourced locally in Nashik region</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-[#120B08] border border-[#2A1E17] rounded-2xl flex items-start space-x-3">
-              <User className="w-4 h-4 text-[#EA580C] mt-0.5" />
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Order ID</span>
-                <span className="text-xs text-white font-mono font-bold">#{batch.orderId.split('-').pop() || batch.orderId}</span>
-                <span className="text-[9px] text-slate-500 block font-mono mt-0.5">Custom Commissions Only</span>
-              </div>
-            </div>
+          <div className="p-4 bg-[#120B08] rounded-2xl border border-[#2A1E17] text-left text-xs text-slate-400 space-y-2">
+            <p className="font-bold text-white flex items-center space-x-1.5">
+              <Info className="w-4 h-4 text-[#EA580C]" />
+              <span>Troubleshooting Tips:</span>
+            </p>
+            <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-400">
+              <li>Ensure the ID follows the format: <span className="font-mono text-white">KAR-MAT-YYYY-XXXXX</span></li>
+              <li>Confirm the ID with your craftsman in the Milestone Tracker.</li>
+            </ul>
           </div>
 
-          <MaterialPassportView passport={passport} showTimelineOnly={true} />
+          <button
+            type="button"
+            onClick={() => {
+              setManualIdInput('KAR-MAT-2026-97373');
+              fetchPassport('KAR-MAT-2026-97373');
+            }}
+            className="w-full py-3.5 rounded-xl bg-[#EA580C] hover:bg-[#F97316] text-white text-xs font-bold uppercase tracking-wider transition-colors shadow"
+          >
+            Try Demo Record (KAR-MAT-2026-97373)
+          </button>
+        </div>
+      )}
 
-          {/* Grain and raw material image previews */}
-          {evidence.some(e => e.type === 'grain_closeup' || e.type === 'raw_full') && (
-            <div className="space-y-4 pt-4 border-t border-[#2A1E17]">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Material Evidence Photos</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {evidence.filter(e => e.type === 'grain_closeup' || e.type === 'raw_full').map(ev => (
-                  <div key={ev.id} className="relative rounded-2xl border border-[#2A1E17] overflow-hidden group bg-[#120B08]">
-                    <img src={ev.storagePath} alt={ev.type} className="w-full h-40 object-cover group-hover:scale-105 transition-transform" />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                      <span className="text-[10px] font-bold text-white uppercase tracking-wider block">
-                        {ev.type === 'grain_closeup' ? 'Close-up grain matching' : 'Raw plank photograph'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+      {!loading && hasSearched && passport && (
+        <div className="space-y-8 animate-fadeIn">
+          
+          {/* Status Alert Banner */}
+          {passport.batch.verificationStatus === 'VERIFIED' || passport.batch.status === 'client_approved' ? (
+            <div className="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-800 flex items-center justify-between">
+              <div className="flex items-center space-x-3 text-emerald-400">
+                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider">
+                  ✓ MATERIAL RECORD FOUND & FULLY VERIFIED
+                </span>
               </div>
+              <span className="text-[10px] font-mono bg-emerald-900/40 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-700/50">
+                {passport.batch.passportId}
+              </span>
+            </div>
+          ) : passport.batch.verificationStatus === 'REJECTED' || passport.batch.status === 'rejected' ? (
+            <div className="p-4 rounded-2xl bg-rose-950/30 border border-rose-800 flex items-center justify-between">
+              <div className="flex items-center space-x-3 text-rose-400">
+                <XCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider">
+                  ✕ MATERIAL VERIFICATION REJECTED
+                </span>
+              </div>
+              <span className="text-[10px] font-mono bg-rose-900/40 text-rose-300 px-2.5 py-1 rounded-full border border-rose-700/50">
+                {passport.batch.passportId}
+              </span>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-800 flex items-center justify-between">
+              <div className="flex items-center space-x-3 text-amber-400">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider">
+                  ⚠ MATERIAL VERIFICATION PENDING
+                </span>
+              </div>
+              <span className="text-[10px] font-mono bg-amber-900/40 text-amber-300 px-2.5 py-1 rounded-full border border-amber-700/50">
+                {passport.batch.passportId}
+              </span>
             </div>
           )}
 
-        </div>
+          {/* Full Customer Verification Result View */}
+          <MaterialPassportView passport={passport} />
 
-      </div>
+        </div>
+      )}
 
     </div>
   );
 };
-
-// Simple import patch helper
-import { AlertTriangle } from 'lucide-react';
